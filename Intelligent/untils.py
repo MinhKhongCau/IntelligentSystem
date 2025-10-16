@@ -181,9 +181,7 @@ def load_model():
     return infer
 
 
-def load_chroma_database(collection_name="image_embeddings"):
-    DB_PATH = "chromadb"
-
+def load_chroma_database(collection_name="image_embeddings", DB_PATH='chromadb'):
     try: 
         # Connect to ChromaDB saved 
         client = chromadb.PersistentClient(path=DB_PATH)
@@ -200,22 +198,26 @@ def crop_face(image, bbox):
         return image[y:y+h, x:x+w]
     
 
-def predict_identity_from_image(image=None, top_k=1):
+def predict_identity_from_image(DB_PATH='chromadb', image=None, top_k=1):
     # Store all of result prediction faces
     all_predictions = [] 
     try:
+        print('-'*20)
+        print('- Load model and database')
         detector = MTCNN()
-        collection, _ = load_chroma_database()
+        collection, _ = load_chroma_database(DB_PATH=DB_PATH)
         infer = load_model()
 
         if image is not None:
             faces = detector.detect_faces(image=image)
+            print(f'- Detect {len(faces) } face in image')
             for face in faces:
                 bbox = face['box']
                 (x, y, w, h) = bbox
                 face_croped = crop_face(image=image, bbox=bbox)
 
                 results = search_face(face_croped, infer, top_k=top_k, collection=collection)
+                print(f'- Searching {results} face in database')
 
                 if results is not None and results['ids'] and results['distances']:
                     # Get result Top-1
@@ -245,5 +247,21 @@ def predict_identity_from_image(image=None, top_k=1):
         return None
 
 
+def add_person_to_chromadb(collection=None, ids=None, face_image=None, identity_name='', filename=''):
+    if face_image is not None and identity_name != '' and filename is not None:
+        model = load_model()
+        _, collection = load_chroma_database()
+        metadatas = {
+            "identity": identity_name,
+            "filename": filename,
+        }
+        documents= {f'Face indentity: {identity_name}'}
+        embedding = image_to_embedding(face_image, model_infer=model)
 
+        collection.add(
+            ids=ids,
+            embeddings=embedding,
+            metadatas=metadatas,
+            documents=documents
+        )
             

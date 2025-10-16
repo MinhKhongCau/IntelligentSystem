@@ -1,13 +1,11 @@
 import tensorflow as tf
 import untils
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import sys
 import os
-from mtcnn import MTCNN
-import numpy as np
 
-infer = untils.load_model()
-detector = MTCNN()
+# --- Init data ---
 
 # Read data
 if len(sys.argv) < 2:
@@ -24,67 +22,74 @@ if not os.path.exists(face_path):
     print(f"Image not found: {face_path}")
     sys.exit(1)
 
-# Read & preprocess image to normalize them into(160, 160)
+# Read image
 image = plt.imread(face_path)
 
-result = untils.predict_identity_from_image(image=image)
+# --- Predict ---
 
-# faces = detector.detect_faces(image=image)
+# Calling predict funtion
+result = untils.predict_identity_from_image(DB_PATH='chromadb', image=image)
+print(result)
+# --- Evaluating result and draw retacgle ---
 
-# box = faces[0]['box']
-# x,y,w,h = box
-# crop_face = image[y:y+h, x:x+w]
-# face = untils.preprocess_img(image=crop_face)
+# 1. Init and Axes 
+# fig: object entry graphic window, ax: object for coodinate axis
+fig, ax = plt.subplots(1)
+# Show origin image
+ax.imshow(image)
 
-# # Embedding image
-# embedding = untils.image_to_embedding(image=face, model_infer=infer).flatten().tolist()
-# if isinstance(embedding, np.ndarray):
-#     embedding_to_query = embedding.flatten().tolist()
-# else:
-#     embedding_to_query = embedding
+# Check result for draw
+if result is None or not result:
+    print("No faces detected or prediction failed.")
+    plt.show()
+    sys.exit(0)
 
-# query_vector = [embedding_to_query] 
+print(f"--- Found {len(result)} faces ---")
 
-# print("Embedding from image")
-
-# collection, _ = untils.load_chroma_database()
-# results = collection.query( 
-#     query_embeddings=query_vector,
-#     n_results=1,
-#     include=['metadatas', 'distances', 'documents'],
-# )
-
-# collection, _ = untils.load_chroma_database()
-# results = untils.search_face(crop_face, infer, 5, collection=collection)
-
-# print("\n--- RESULTS FROM CHROMADB ---")
-
-# # Print result
-
-# if results and results.get("ids") and results["ids"][0]:
-#     for idx, (id_, distance, meta, doc) in enumerate(zip(
-#         results["ids"][0], 
-#         results["distances"][0], 
-#         results["metadatas"][0], 
-#         results["documents"][0]
-#     )):
-#         print(f"Result #{idx+1}:")
-#         # Distance 0 or approximately 0 proof that found itself
-#         print(f"ID: {id_} | Distance: {distance:.6f}") 
-#         print(f"Document: {doc}")
-#         print(f"Metadata: {meta}")
-# else:
-#     print("Not found.")
-
-# # Print result
-
+# Loop entry faces
 for rel in result:
-    face = rel['face']
-    ids = rel['ids']
-    document = rel['document']
-    person_name = rel['person_name']
-    # Distance 0 or approximately 0 proof that found itself
-    print(f"ID: {ids}") 
-    print(f"Document: {document}")
-    print(f"Name: {person_name}")
+    # 2. Access data Dictionary Result data
+    print("-" * 20)
+    print(f'Searching result: {rel}')
+    
+    # Get coodinate bounding box [x, y, w, h]
+    face = rel.get('face')
+    ids = rel.get('ids', 'N/A')
+    person_name = rel.get('person_name', 'Unknown')
+
+    if face is None:
+        print("Bounding box data is missing or incomplete. Skipping this face.")
+        continue
+
+    distance = face['distance']
+
+    # 3. Print result using console
+    print(f"ID: {ids}")
     print(f"Face: {face}")
+    print(f"Name: {person_name}")
+    # print(f"Distance (Cosine): {distance}") 
+    print(f"BBox: (x:{face['x']}, y:{face['y']}, w:{face['width']}, h:{face['height']})")
+
+    # 4. Create and draw retacgle
+    # Make retacgle (x, y is left/ right coner of BBox)
+    rect = patches.Rectangle((face['x'], face['y']), face['width'], face['height'], 
+                             linewidth=2, 
+                             edgecolor='r',       # Red
+                             facecolor='none',    # None fill color inside
+                             alpha=1)
+    
+    # Put retacgle into Axes
+    ax.add_patch(rect)
+
+    # 5. Put text
+    ax.text(face['x'], face['y'] - 10, 
+            f"{person_name} (D:{distance:.2f})", 
+            color='red', 
+            fontsize=12, 
+            weight='bold',
+            bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2))
+
+# 6. Show image
+plt.title(f"Face Recognition Result for {os.path.basename(face_path)}")
+plt.axis('off') # hide axis
+plt.show()
