@@ -1,2 +1,5 @@
 dataset/
 __pycache__/
+Face_recognition_Finding_missing_people/
+.vscode/
+Kafka/

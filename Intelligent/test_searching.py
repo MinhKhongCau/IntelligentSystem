@@ -28,7 +28,9 @@ image = plt.imread(face_path)
 # --- Predict ---
 
 # Calling predict funtion
-result = untils.predict_identity_from_image(DB_PATH='chromadb', image=image)
+collection, _ = untils.load_chroma_database(DB_PATH='chromadb')
+infer = untils.load_model()
+result = untils.predict_identity_from_image(collection=collection, infer=infer, image=image)
 print(result)
 # --- Evaluating result and draw retacgle ---
 

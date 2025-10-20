@@ -198,16 +198,18 @@ def crop_face(image, bbox):
         return image[y:y+h, x:x+w]
     
 
-def predict_identity_from_image(DB_PATH='chromadb', image=None, top_k=1):
+def predict_identity_from_image(
+        collection=load_chroma_database(DB_PATH='chromadb'), 
+        infer = load_model(), 
+        detector = MTCNN(), 
+        image=None, 
+        top_k=1):
     # Store all of result prediction faces
     all_predictions = [] 
     try:
         print('-'*20)
         print('- Load model and database')
-        detector = MTCNN()
-        collection, _ = load_chroma_database(DB_PATH=DB_PATH)
-        infer = load_model()
-
+        
         if image is not None:
             faces = detector.detect_faces(image=image)
             print(f'- Detect {len(faces) } face in image')
