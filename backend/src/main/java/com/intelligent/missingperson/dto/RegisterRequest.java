@@ -1,10 +1,24 @@
 package com.intelligent.missingperson.dto;
 
+import java.time.LocalDate;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Data
+@Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegisterRequest {
+
     @NotBlank(message = "Username is required")
     @Size(max = 255, message = "Username must not exceed 255 characters")
     private String username;
@@ -18,58 +32,24 @@ public class RegisterRequest {
     @Size(max = 255, message = "Email must not exceed 255 characters")
     private String email;
 
+    @NotBlank(message = "Full name is required")
+    @Size(max = 255, message = "Full name must not exceed 255 characters")
+    private String fullName;
+
+    private LocalDate birthday;
+
+    @Size(max = 1000, message = "Address must not exceed 1000 characters")
+    private String address;
+
     private Boolean gender;
-    
+
     @Size(max = 20, message = "Phone must not exceed 20 characters")
     private String phone;
 
-    public RegisterRequest() {}
+    @Size(max = 1000, message = "Profile picture URL must not exceed 1000 characters")
+    private String profilePictureUrl;
 
-    public RegisterRequest(String username, String password, String email, Boolean gender, String phone) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.gender = gender;
-        this.phone = phone;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Boolean getGender() {
-        return gender;
-    }
-
-    public void setGender(Boolean gender) {
-        this.gender = gender;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    @NotBlank(message = "Account type is required")
+    @Size(max = 50, message = "Account type must not exceed 50 characters")
+    private String accountType;
 }

@@ -30,3 +30,4 @@ com/intelligent/missingperson/controller/AreaController.class
 com/intelligent/missingperson/security/JwtTokenProvider.class
 com/intelligent/missingperson/entity/DetailAreaAccountId.class
 com/intelligent/missingperson/entity/CctvReport.class
+com/intelligent/missingperson/controller/AuthController$1.class

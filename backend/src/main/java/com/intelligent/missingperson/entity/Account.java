@@ -1,99 +1,82 @@
 package com.intelligent.missingperson.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Set;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
-@Table(name = "ACCOUNT")
+@Table(name = "ACCOUNT", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "Username"),
+    @UniqueConstraint(columnNames = "Email")
+})
 public class Account {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private Long id;
-    
-    @NotBlank(message = "Username is required")
-    @Size(max = 255, message = "Username must not exceed 255 characters")
-    @Column(name = "Username", unique = true, nullable = false)
+    private Integer id;
+
+    @Column(name = "Username", nullable = false, length = 255)
     private String username;
-    
-    @NotBlank(message = "Password is required")
-    @Size(max = 255, message = "Password must not exceed 255 characters")
-    @Column(name = "Password", nullable = false)
+
+    @Column(name = "Password", nullable = false, length = 255)
     private String password;
-    
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    @Size(max = 255, message = "Email must not exceed 255 characters")
-    @Column(name = "Email", unique = true, nullable = false)
+
+    @Column(name = "Email", nullable = false, length = 255)
     private String email;
-    
+
+    @Column(name = "FullName", length = 255)
+    private String fullName;
+
+    @Column(name = "Birthday")
+    private LocalDate birthday;
+
+    @Lob 
+    @Column(name = "Address")
+    private String address;
+
     @Column(name = "Gender")
-    private Boolean gender; // 0: Male, 1: Female
-    
-    @Size(max = 20, message = "Phone must not exceed 20 characters")
-    @Column(name = "Phone")
+    private Boolean gender; // BIT
+
+    @Column(name = "Phone", length = 20)
     private String phone;
-    
-    // Constructors
-    public Account() {}
-    
-    public Account(String username, String password, String email, Boolean gender, String phone) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.gender = gender;
-        this.phone = phone;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public String getUsername() {
-        return username;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public String getPassword() {
-        return password;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
-    public String getEmail() {
-        return email;
-    }
-    
-    public void setEmail(String email) {
-        this.email = email;
-    }
-    
-    public Boolean getGender() {
-        return gender;
-    }
-    
-    public void setGender(Boolean gender) {
-        this.gender = gender;
-    }
-    
-    public String getPhone() {
-        return phone;
-    }
-    
-    public void setPhone(String phone) {
-        this.phone = phone;
+
+    @Lob 
+    @Column(name = "ProfilePictureUrl")
+    private String profilePictureUrl;
+
+    @Column(name = "AccountType", nullable = false, length = 50)
+    private String accountType;
+
+    @Column(name = "AccountStatus", nullable = false)
+    private boolean accountStatus = true; // DEFAULT 1
+
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    // --- Relationships ---
+
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Police police;
+
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Volunteer volunteer;
+
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private CarePartner carePartner;
+
+    @OneToMany(mappedBy = "account")
+    private Set<DetailAreaAccount> detailAreaAccounts;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
     }
 }
