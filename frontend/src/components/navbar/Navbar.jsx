@@ -21,7 +21,17 @@ const Navbar = () => {
                         <span className="ml-2 font-bold">Home</span>
                     </Link>
                 </li>
-                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center" onclick="dropdownHandler(this)">
+                <li className="flex cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
+                    <Link to="/login">
+                        <span className="ml-2 font-bold">Login</span>
+                    </Link>
+                </li>
+                <li className="flex cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
+                    <Link to="/register">
+                        <span className="ml-2 font-bold">Register</span>
+                    </Link>
+                </li>
+                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center">
                     <a href="http://localhost:8501/">
                         <span className="ml-2 font-bold">Surveillance Area</span>
                     </a>
@@ -31,14 +41,29 @@ const Navbar = () => {
                         <span className="ml-2 font-bold">Report case</span>
                     </Link>
                 </li>
-                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center" onclick="dropdownHandler(this)">
+                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center">
                     <Link to="/Missingpeople">
                         <span className="ml-2 font-bold">Missing List</span>
                     </Link>
                 </li>
-                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center" onclick="dropdownHandler(this)">
+                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center">
+                    <Link to="/search">
+                        <span className="ml-2 font-bold">Advanced Search</span>
+                    </Link>
+                </li>
+                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center">
                     <Link to="/locations">
                         <span className="ml-2 font-bold">Tracked locations</span>
+                    </Link>
+                </li>
+                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center">
+                    <Link to="/reports">
+                        <span className="ml-2 font-bold">Reports</span>
+                    </Link>
+                </li>
+                <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center">
+                    <Link to="/profile">
+                        <span className="ml-2 font-bold">Profile</span>
                     </Link>
                 </li>
             </ul>
@@ -66,6 +91,12 @@ const Navbar = () => {
                 <li>
                     <Link className="hover:text-indigo-500 text-lg focus:text-indigo-500" to="/">Home</Link>
                 </li>
+                <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
+                    <Link className="focus:text-indigo-500 text-lg" to="/login">Login</Link>
+                </li>
+                <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
+                    <Link className="focus:text-indigo-500 text-lg" to="/register">Register</Link>
+                </li>
                 <li className="ml-4 hover:text-indigo-500 ">
                     <a className="focus:text-indigo-500 text-lg" href="http://localhost:8501/">Surveillance Area</a>
                 </li>
@@ -76,7 +107,16 @@ const Navbar = () => {
                     <Link className="focus:text-indigo-500 text-lg" to="/Missingpeople">Missing List</Link>
                 </li>
                 <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
-                    <Link className="focus:text-indigo-500 text-lg"  to="/locations">Tracked locations</Link>
+                    <Link className="focus:text-indigo-500 text-lg" to="/search">Advanced Search</Link>
+                </li>
+                <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
+                    <Link className="focus:text-indigo-500 text-lg" to="/locations">Tracked locations</Link>
+                </li>
+                <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
+                    <Link className="focus:text-indigo-500 text-lg" to="/reports">Reports</Link>
+                </li>
+                <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
+                    <Link className="focus:text-indigo-500 text-lg" to="/profile">Profile</Link>
                 </li>
             </ul>
             <div className="pl-40">
