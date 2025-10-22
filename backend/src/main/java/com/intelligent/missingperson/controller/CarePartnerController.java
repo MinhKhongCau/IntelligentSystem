@@ -1,6 +1,6 @@
 package com.intelligent.missingperson.controller;
 
-import com.intelligent.missingperson.entity.CarePartner;
+import com.intelligent.missingperson.entity.Reporter;
 import com.intelligent.missingperson.repository.CarePartnerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,12 +16,12 @@ public class CarePartnerController {
     private CarePartnerRepository carePartnerRepository;
 
     @GetMapping
-    public List<CarePartner> getAllCarePartners() {
+    public List<Reporter> getAllCarePartners() {
         return carePartnerRepository.findAll();
     }
 
     @GetMapping("/{id}")
-    public CarePartner getCarePartnerById(@PathVariable Long id) {
+    public Reporter getCarePartnerById(@PathVariable Long id) {
         return carePartnerRepository.findById(id).orElse(null);
     }
 }

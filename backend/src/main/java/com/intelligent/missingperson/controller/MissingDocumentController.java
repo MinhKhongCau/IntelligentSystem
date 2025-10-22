@@ -50,7 +50,7 @@ public class MissingDocumentController {
     @PostMapping
     public ResponseEntity<MissingDocument> createMissingDocument(@Valid @RequestBody MissingDocumentRequest request) {
         Optional<Area> area = areaRepository.findById(request.getMissingAreaId());
-        Optional<CarePartner> reporter = carePartnerRepository.findById(request.getReporterId());
+        Optional<Reporter> reporter = carePartnerRepository.findById(request.getReporterId());
 
         if (area.isEmpty() || reporter.isEmpty()) {
             return ResponseEntity.badRequest().build();
@@ -74,7 +74,7 @@ public class MissingDocumentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MissingDocument> updateMissingDocument(@PathVariable Long id, 
+    public ResponseEntity<MissingDocument> updateMissingDocument(@PathVariable Long id,
                                                                @Valid @RequestBody MissingDocumentRequest request) {
         Optional<MissingDocument> existingDocument = missingDocumentRepository.findById(id);
         if (existingDocument.isEmpty()) {

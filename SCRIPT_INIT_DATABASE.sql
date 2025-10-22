@@ -7,10 +7,10 @@ GO
 
 
 ------------------------------------------------------
--- TABLE 1: ACCOUNT 
+-- TABLE 1: ACCOUNT
 ------------------------------------------------------
 CREATE TABLE ACCOUNT (
-    ID INT IDENTITY(1,1) PRIMARY KEY, 
+    ID INT IDENTITY(1,1) PRIMARY KEY,
     Username NVARCHAR(255) NOT NULL UNIQUE,
     Password NVARCHAR(255) NOT NULL,
     Email NVARCHAR(255) NOT NULL UNIQUE,
@@ -19,7 +19,7 @@ CREATE TABLE ACCOUNT (
 );
 
 ------------------------------------------------------
--- TABLE 2: AREA 
+-- TABLE 2: AREA
 ------------------------------------------------------
 CREATE TABLE AREA (
     ID INT IDENTITY(1,1) PRIMARY KEY,
@@ -29,18 +29,18 @@ CREATE TABLE AREA (
 );
 
 ------------------------------------------------------
--- TABLE 3: POLICE 
+-- TABLE 3: POLICE
 ------------------------------------------------------
 CREATE TABLE POLICE (
-    ID INT PRIMARY KEY, 
+    ID INT PRIMARY KEY,
     Patrol_Car_number NVARCHAR(255) UNIQUE
 );
 
 ------------------------------------------------------
--- TABLE 4: VOLUNTEER 
+-- TABLE 4: VOLUNTEER
 ------------------------------------------------------
 CREATE TABLE VOLUNTEER (
-    ID INT PRIMARY KEY, 
+    ID INT PRIMARY KEY,
     VolunteerStatus BIT,
     DateJoined DATE,
     SKILL NVARCHAR(255),
@@ -48,19 +48,19 @@ CREATE TABLE VOLUNTEER (
 );
 
 ------------------------------------------------------
--- TABLE 5: CARE_PARTNER 
+-- TABLE 5: CARE_PARTNER
 ------------------------------------------------------
-CREATE TABLE CARE_PARTNER (
-    ID INT PRIMARY KEY, 
+CREATE TABLE REPORTER (
+    ID INT PRIMARY KEY,
     PARNER_Status BIT,
     FOREIGN KEY (ID) REFERENCES ACCOUNT(ID)
 );
 
 ------------------------------------------------------
--- TABLE 6: CCTV 
+-- TABLE 6: CCTV
 ------------------------------------------------------
 CREATE TABLE CCTV (
-    ID INT IDENTITY(1,1) PRIMARY KEY, 
+    ID INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(255),
     Status NVARCHAR(50),
     IP NVARCHAR(50),
@@ -69,32 +69,32 @@ CREATE TABLE CCTV (
 );
 
 ------------------------------------------------------
--- TABLE 7: MISSING_DOCUMENT 
+-- TABLE 7: MISSING_DOCUMENT
 ------------------------------------------------------
 CREATE TABLE MISSING_DOCUMENT (
-    ID INT IDENTITY(1,1) PRIMARY KEY, 
+    ID INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(255) NOT NULL,
     Birthday DATE,
-    Gender BIT, 
+    Gender BIT,
     IdentityCardNumber VARCHAR(100),
     Height NVARCHAR(20),
     IdentifyingCharacteristic NTEXT,
-    FacePictureUrl VARCHAR(MAX), 
+    FacePictureUrl VARCHAR(MAX),
     MissingTime DATETIME,
     ReportDate DATETIME,
     UpdateDate DATETIME,
-    Status BIT NOT NULL DEFAULT 0, 
-    ID_MissingArea INT, 
+    Status BIT NOT NULL DEFAULT 0,
+    ID_MissingArea INT,
     ID_Reporter INT,
     FOREIGN KEY (ID_Reporter) REFERENCES CARE_PARTNER(ID),
     FOREIGN KEY (ID_MissingArea) REFERENCES AREA(ID)
 );
 
 ------------------------------------------------------
--- TABLE 8: MANAGE_DOCUMENT 
+-- TABLE 8: MANAGE_DOCUMENT
 ------------------------------------------------------
 CREATE TABLE MANAGE_DOCUMENT (
-    ID_Police INT NOT NULL, 
+    ID_Police INT NOT NULL,
     ID_MissingDocument INT NOT NULL,
     Descripton NVARCHAR(MAX),
     FoundDate DATETIME,
@@ -110,7 +110,7 @@ CREATE TABLE MANAGE_DOCUMENT (
 );
 
 ------------------------------------------------------
--- TABLE 9: INTERESTING_PROFILE 
+-- TABLE 9: INTERESTING_PROFILE
 ------------------------------------------------------
 CREATE TABLE INTEREST_PROFILE (
     ID_MissingDocument INT  NOT NULL,
@@ -127,13 +127,13 @@ CREATE TABLE INTEREST_PROFILE (
 );
 
 ------------------------------------------------------
--- TABLE 10: CCTV_REPORT 
+-- TABLE 10: CCTV_REPORT
 ------------------------------------------------------
 CREATE TABLE CCTV_REPORT (
     ID_CCTV INT,
-    ID_MissingDocument INT, 
+    ID_MissingDocument INT,
     Detail NVARCHAR(MAX),
-    TimeReport DATETIME, 
+    TimeReport DATETIME,
     Status BIT,
     Confident FLOAT,
     DetectionLog NVARCHAR(255),
@@ -144,17 +144,17 @@ CREATE TABLE CCTV_REPORT (
 );
 
 ------------------------------------------------------
--- TABLE 12: DETAIL_AREA_ACCOUNT 
+-- TABLE 12: DETAIL_AREA_ACCOUNT
 ------------------------------------------------------
 CREATE TABLE DETAIL_AREA_ACCOUNT (
     ID_Area INT,
-    ID_Account INT, 
+    ID_Account INT,
     FOREIGN KEY (ID_Area) REFERENCES AREA(ID),
     FOREIGN KEY (ID_Account) REFERENCES ACCOUNT(ID)
 );
 
 ------------------------------------------------------
--- INSERT DATA 
+-- INSERT DATA
 ------------------------------------------------------
 SET DATEFORMAT ymd;
 -- Dữ liệu mẫu được thêm vào ngày 2025-10-20
@@ -202,7 +202,7 @@ INSERT INTO CCTV (Name, Status, IP, Port, ID_Area) VALUES
 -- TABLE 7: MISSING_DOCUMENT
 ------------------------------------------------------
 INSERT INTO MISSING_DOCUMENT (Name, Birthday, Gender, IdentityCardNumber, Height, IdentifyingCharacteristic, FacePictureUrl, MissingTime, ReportDate, UpdateDate, Status, ID_MissingArea, ID_Reporter) VALUES
-(N'Trần Thị Mai', '1960-08-20', 1, '123456789', N'1m50', N'Có nốt ruồi dưới mắt phải, tóc bạc', 'url_hinh_mai.jpg', '2025-10-19 09:30:00', GETDATE(), GETDATE(), 0, 1, 2); 
+(N'Trần Thị Mai', '1960-08-20', 1, '123456789', N'1m50', N'Có nốt ruồi dưới mắt phải, tóc bạc', 'url_hinh_mai.jpg', '2025-10-19 09:30:00', GETDATE(), GETDATE(), 0, 1, 2);
 -- ID 1: Hồ sơ mất tích của cô Mai. Báo cáo bởi Partner ID 2 (Lien). Mất tại Area ID 1.
 
 ------------------------------------------------------
