@@ -402,3 +402,4 @@ const AreaManagement = () => {
 };
 
 export default AreaManagement;
+
