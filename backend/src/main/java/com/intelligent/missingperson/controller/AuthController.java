@@ -58,13 +58,15 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        Account account = new Account(
-                registerRequest.getUsername(),
-                passwordEncoder.encode(registerRequest.getPassword()),
-                registerRequest.getEmail(),
-                registerRequest.getGender(),
-                registerRequest.getPhone()
-        );
+        Account account = new Account();
+        account.setUsername(registerRequest.getUsername());
+        account.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
+        account.setEmail(registerRequest.getEmail());
+        account.setPhoneNumber(registerRequest.getPhoneNumber());
+        account.setFullName(registerRequest.getFullName());
+        account.setRole(registerRequest.getRole());
+        account.setDateJoined(new java.util.Date());
+        account.setStatus(true);
 
         accountRepository.save(account);
 

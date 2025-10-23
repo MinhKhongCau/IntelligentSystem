@@ -18,20 +18,17 @@ public class RegisterRequest {
     @Size(max = 255, message = "Email must not exceed 255 characters")
     private String email;
 
-    private Boolean gender;
-    
     @Size(max = 20, message = "Phone must not exceed 20 characters")
-    private String phone;
+    private String phoneNumber;
+
+    @Size(max = 255, message = "FullName must not exceed 255 characters")
+    private String fullName;
+
+    @NotBlank(message = "Role is required")
+    @Size(max = 50, message = "Role must not exceed 50 characters")
+    private String role;
 
     public RegisterRequest() {}
-
-    public RegisterRequest(String username, String password, String email, Boolean gender, String phone) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.gender = gender;
-        this.phone = phone;
-    }
 
     public String getUsername() {
         return username;
@@ -57,19 +54,27 @@ public class RegisterRequest {
         this.email = email;
     }
 
-    public Boolean getGender() {
-        return gender;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public void setGender(Boolean gender) {
-        this.gender = gender;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
-    public String getPhone() {
-        return phone;
+    public String getFullName() {
+        return fullName;
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }
