@@ -10,10 +10,10 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
-public class DetailAreaAccountId implements Serializable {
-    @Column(name = "ID_Area")
-    private Integer areaId;
+public class VolunteerSubscriptionId implements Serializable {
+    @Column(name = "ID_MissingDocument")
+    private Integer missingDocumentId;
 
-    @Column(name = "ID_Account")
-    private Integer accountId;
+    @Column(name = "ID_Volunteer")
+    private Integer volunteerId;
 }

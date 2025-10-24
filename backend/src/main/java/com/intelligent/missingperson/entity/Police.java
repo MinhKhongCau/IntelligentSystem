@@ -1,54 +1,41 @@
 package com.intelligent.missingperson.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
+import lombok.*;
+import java.io.Serializable;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString(exclude = "account")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "POLICE")
-public class Police {
-    
+@Table(name = "POLICE", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "PoliceCode"),
+        @UniqueConstraint(columnNames = "Patrol_Car_number")
+})
+public class Police implements Serializable {
+
     @Id
     @Column(name = "ID")
-    private Long id;
-    
-    @Size(max = 255, message = "Patrol car number must not exceed 255 characters")
-    @Column(name = "Patrol_Car_number", unique = true)
-    private String patrolCarNumber;
-    
+    @EqualsAndHashCode.Include
+    private Integer id;
+
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID")
     @MapsId
+    @JoinColumn(name = "ID")
     private Account account;
-    
-    // Constructors
-    public Police() {}
-    
-    public Police(String patrolCarNumber) {
-        this.patrolCarNumber = patrolCarNumber;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public String getPatrolCarNumber() {
-        return patrolCarNumber;
-    }
-    
-    public void setPatrolCarNumber(String patrolCarNumber) {
-        this.patrolCarNumber = patrolCarNumber;
-    }
-    
-    public Account getAccount() {
-        return account;
-    }
-    
-    public void setAccount(Account account) {
-        this.account = account;
-    }
+
+    @Column(name = "PoliceCode", length = 50)
+    private String policeCode;
+
+    @Column(name = "Rank", length = 100)
+    private String rank;
+
+    @Column(name = "Station", length = 255)
+    private String station;
+
+    @Column(name = "Patrol_Car_number", length = 255)
+    private String patrolCarNumber;
 }

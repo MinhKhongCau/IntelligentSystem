@@ -1,197 +1,106 @@
 package com.intelligent.missingperson.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
+import lombok.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString(exclude = {"missingArea","reporter","cctvReports","volunteerReports","manageDocuments","volunteerSubscriptions"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "MISSING_DOCUMENT")
-public class MissingDocument {
-    
+public class MissingDocument implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private Long id;
-    
-    @NotBlank(message = "Name is required")
-    @Size(max = 255, message = "Name must not exceed 255 characters")
-    @Column(name = "Name", nullable = false)
-    private String name;
-    
+    @EqualsAndHashCode.Include
+    private Integer id;
+
+    @Column(name = "FullName", nullable = false, length = 255)
+    private String fullName;
+
     @Column(name = "Birthday")
     private LocalDate birthday;
-    
+
     @Column(name = "Gender")
-    private Boolean gender; // 0: Male, 1: Female
-    
-    @Size(max = 100, message = "Identity card number must not exceed 100 characters")
-    @Column(name = "IdentityCardNumber")
+    private Boolean gender;
+
+    @Column(name = "IdentityCardNumber", length = 100)
     private String identityCardNumber;
-    
-    @Size(max = 20, message = "Height must not exceed 20 characters")
-    @Column(name = "Height")
+
+    @Column(name = "Height", length = 20)
     private String height;
-    
-    @Column(name = "IdentifyingCharacteristic", columnDefinition = "NTEXT")
+
+    @Column(name = "Weight", length = 20)
+    private String weight;
+
+    @Lob
+    @Column(name = "IdentifyingCharacteristic")
     private String identifyingCharacteristic;
-    
-    @Column(name = "FacePictureUrl", columnDefinition = "VARCHAR(MAX)")
+
+    @Lob
+    @Column(name = "LastKnownOutfit")
+    private String lastKnownOutfit;
+
+    @Lob
+    @Column(name = "MedicalConditions")
+    private String medicalConditions;
+
+    @Lob
+    @Column(name = "FacePictureUrl", nullable = false)
     private String facePictureUrl;
-    
-    @Column(name = "MissingTime")
+
+    @Column(name = "MissingTime", nullable = false)
     private LocalDateTime missingTime;
-    
-    @Column(name = "ReportDate")
+
+    @Column(name = "ReportDate", nullable = false)
     private LocalDateTime reportDate;
-    
+
     @Column(name = "UpdateDate")
     private LocalDateTime updateDate;
-    
-    @Column(name = "Status", nullable = false)
-    private Boolean status = false; // 0: Missing, 1: Found
-    
+
+    @Column(name = "CaseStatus", nullable = false, length = 50)
+    @Builder.Default
+    private String caseStatus = "Missing";
+
+    @Column(name = "ReporterRelationship", length = 100)
+    private String reporterRelationship;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_MissingArea")
     private Area missingArea;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_Reporter")
     private CarePartner reporter;
-    
-    // Constructors
-    public MissingDocument() {}
-    
-    public MissingDocument(String name, LocalDate birthday, Boolean gender, String identityCardNumber, 
-                          String height, String identifyingCharacteristic, String facePictureUrl, 
-                          LocalDateTime missingTime, Area missingArea, CarePartner reporter) {
-        this.name = name;
-        this.birthday = birthday;
-        this.gender = gender;
-        this.identityCardNumber = identityCardNumber;
-        this.height = height;
-        this.identifyingCharacteristic = identifyingCharacteristic;
-        this.facePictureUrl = facePictureUrl;
-        this.missingTime = missingTime;
-        this.missingArea = missingArea;
-        this.reporter = reporter;
-        this.reportDate = LocalDateTime.now();
-        this.updateDate = LocalDateTime.now();
-        this.status = false;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public LocalDate getBirthday() {
-        return birthday;
-    }
-    
-    public void setBirthday(LocalDate birthday) {
-        this.birthday = birthday;
-    }
-    
-    public Boolean getGender() {
-        return gender;
-    }
-    
-    public void setGender(Boolean gender) {
-        this.gender = gender;
-    }
-    
-    public String getIdentityCardNumber() {
-        return identityCardNumber;
-    }
-    
-    public void setIdentityCardNumber(String identityCardNumber) {
-        this.identityCardNumber = identityCardNumber;
-    }
-    
-    public String getHeight() {
-        return height;
-    }
-    
-    public void setHeight(String height) {
-        this.height = height;
-    }
-    
-    public String getIdentifyingCharacteristic() {
-        return identifyingCharacteristic;
-    }
-    
-    public void setIdentifyingCharacteristic(String identifyingCharacteristic) {
-        this.identifyingCharacteristic = identifyingCharacteristic;
-    }
-    
-    public String getFacePictureUrl() {
-        return facePictureUrl;
-    }
-    
-    public void setFacePictureUrl(String facePictureUrl) {
-        this.facePictureUrl = facePictureUrl;
-    }
-    
-    public LocalDateTime getMissingTime() {
-        return missingTime;
-    }
-    
-    public void setMissingTime(LocalDateTime missingTime) {
-        this.missingTime = missingTime;
-    }
-    
-    public LocalDateTime getReportDate() {
-        return reportDate;
-    }
-    
-    public void setReportDate(LocalDateTime reportDate) {
-        this.reportDate = reportDate;
-    }
-    
-    public LocalDateTime getUpdateDate() {
-        return updateDate;
-    }
-    
-    public void setUpdateDate(LocalDateTime updateDate) {
-        this.updateDate = updateDate;
-    }
-    
-    public Boolean getStatus() {
-        return status;
-    }
-    
-    public void setStatus(Boolean status) {
-        this.status = status;
-    }
-    
-    public Area getMissingArea() {
-        return missingArea;
-    }
-    
-    public void setMissingArea(Area missingArea) {
-        this.missingArea = missingArea;
-    }
-    
-    public CarePartner getReporter() {
-        return reporter;
-    }
-    
-    public void setReporter(CarePartner reporter) {
-        this.reporter = reporter;
+
+    @OneToMany(mappedBy = "missingDocument", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<CctvReport> cctvReports = new HashSet<>();
+
+    @OneToMany(mappedBy = "missingDocument", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<VolunteerReport> volunteerReports = new HashSet<>();
+
+    @OneToMany(mappedBy = "missingDocument", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<ManageDocument> manageDocuments = new HashSet<>();
+
+    @OneToMany(mappedBy = "missingDocument", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<VolunteerSubscription> volunteerSubscriptions = new HashSet<>();
+
+    @PrePersist
+    protected void onCreate() {
+        if (reportDate == null) reportDate = LocalDateTime.now();
+        if (caseStatus == null) caseStatus = "Missing";
     }
 }

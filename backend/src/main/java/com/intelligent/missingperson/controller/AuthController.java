@@ -1,7 +1,7 @@
 package com.intelligent.missingperson.controller;
 
-import com.intelligent.missingperson.dto.JwtAuthenticationResponse;
 import com.intelligent.missingperson.dto.LoginRequest;
+import com.intelligent.missingperson.dto.LoginResponse;
 import com.intelligent.missingperson.dto.RegisterRequest;
 import com.intelligent.missingperson.entity.Account;
 import com.intelligent.missingperson.repository.AccountRepository;
@@ -12,9 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,31 +41,34 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        System.out.println("-----> loginRequest: " + loginRequest.getUsername());
-        java.util.Optional<Account> optAccount = accountRepository.findByUsername(loginRequest.getUsername());
-        if (!optAccount.isPresent()) {
+        Optional<Account> optAccount = accountRepository.findByUsername(loginRequest.getUsername());
+        if (optAccount.isEmpty()) {
             return ResponseEntity.status(401).body("Invalid username or password");
         }
 
-        Account account = optAccount.get();
-        if (!passwordEncoder.matches(loginRequest.getPassword(), account.getPassword())) {
-            System.out.println("-----> get account unsuccessfully: " + account.getUsername());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+
+            // Do not expose password
+            Account account = optAccount.get();
+            account.setPassword(null);
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                .accessToken(jwt)
+                .account(account)
+                .build();
+
+            return ResponseEntity.ok(loginResponse);
+        } catch (AuthenticationException ex) {
             return ResponseEntity.status(401).body("Invalid username or password");
         }
-        System.out.println("-----> get account successfully: " + account.getUsername());
-        
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
-
-        account.setPassword(null);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
     }
 
     @PostMapping("/register")
@@ -72,29 +81,32 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // build Account using setters (Account has no all-args constructor / builder)
-        Account account = new Account();
-        account.setUsername(registerRequest.getUsername());
-        account.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        account.setEmail(registerRequest.getEmail());
-        account.setFullName(registerRequest.getFullName());
-        account.setBirthday(registerRequest.getBirthday());
-        account.setAddress(registerRequest.getAddress());
-        account.setGender(registerRequest.getGender());
-        account.setPhone(registerRequest.getPhone());
-        account.setProfilePictureUrl(registerRequest.getProfilePictureUrl());
-        account.setAccountType(registerRequest.getAccountType());
+        Account account = Account.builder()
+                .username(registerRequest.getUsername())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .email(registerRequest.getEmail())
+                .fullName(registerRequest.getFullName())
+                .birthday(registerRequest.getBirthday())
+                .address(registerRequest.getAddress())
+                .gender(registerRequest.getGender())
+                .phone(registerRequest.getPhone())
+                .profilePictureUrl(registerRequest.getProfilePictureUrl())
+                .accountType(registerRequest.getAccountType())
+                .build();
 
-        accountRepository.save(account);
+        Account saved = accountRepository.save(account);
+        saved.setPassword(null);
 
-        return ResponseEntity.ok("User registered successfully!");
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("message", "User registered successfully!");
+        resp.put("account", saved);
+
+        return ResponseEntity.created(URI.create("/api/auth/" + saved.getId())).body(resp);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser() {
-        // Clear the security context
         SecurityContextHolder.clearContext();
-        
         return ResponseEntity.ok("User logged out successfully!");
     }
 
@@ -103,11 +115,15 @@ public class AuthController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).body("User not authenticated");
         }
-        
+
         String username = authentication.getName();
-        return ResponseEntity.ok(new java.util.HashMap<String, String>() {{
-            put("username", username);
-            put("authenticated", "true");
-        }});
+        Optional<Account> opt = accountRepository.findByUsername(username);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(401).body("User not found");
+        }
+
+        Account account = opt.get();
+        account.setPassword(null);
+        return ResponseEntity.ok(account);
     }
 }

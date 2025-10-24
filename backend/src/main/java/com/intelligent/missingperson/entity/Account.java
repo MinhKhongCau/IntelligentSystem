@@ -1,26 +1,30 @@
 package com.intelligent.missingperson.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@ToString(exclude = {"police","carePartner","volunteer","detailAreaAccounts"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "ACCOUNT", uniqueConstraints = {
-    @UniqueConstraint(columnNames = "Username"),
-    @UniqueConstraint(columnNames = "Email")
+@Table(name = "ACCOUNT", schema = "dbo", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "Username"),
+        @UniqueConstraint(columnNames = "Email")
 })
-public class Account {
+public class Account implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
+    @EqualsAndHashCode.Include
     private Integer id;
 
     @Column(name = "Username", nullable = false, length = 255)
@@ -38,45 +42,45 @@ public class Account {
     @Column(name = "Birthday")
     private LocalDate birthday;
 
-    @Lob 
-    @Column(name = "Address")
+    @Lob
+    @Column(name = "Address", columnDefinition = "nvarchar(max)")
     private String address;
 
     @Column(name = "Gender")
-    private Boolean gender; // BIT
+    private Boolean gender;
 
     @Column(name = "Phone", length = 20)
     private String phone;
 
-    @Lob 
-    @Column(name = "ProfilePictureUrl")
+    @Lob
+    @Column(name = "ProfilePictureUrl", columnDefinition = "varchar(max)")
     private String profilePictureUrl;
 
     @Column(name = "AccountType", nullable = false, length = 50)
     private String accountType;
 
     @Column(name = "AccountStatus", nullable = false)
-    private boolean accountStatus = true; // DEFAULT 1
+    @Builder.Default
+    private boolean accountStatus = true;
 
-    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false)
     private LocalDateTime createdAt;
 
-    // --- Relationships ---
-
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private Police police;
 
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Volunteer volunteer;
-
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private CarePartner carePartner;
 
-    @OneToMany(mappedBy = "account")
-    private Set<DetailAreaAccount> detailAreaAccounts;
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private Volunteer volunteer;
+
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<DetailAreaAccount> detailAreaAccounts = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) createdAt = LocalDateTime.now();
     }
 }

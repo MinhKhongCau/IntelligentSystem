@@ -1,70 +1,62 @@
 package com.intelligent.missingperson.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import lombok.*;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString(exclude = {"cctvs","detailAreaAccounts","missingDocuments","volunteerReports"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "AREA")
-public class Area {
-    
+public class Area implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private Long id;
-    
-    @NotBlank(message = "Commune is required")
-    @Size(max = 100, message = "Commune must not exceed 100 characters")
-    @Column(name = "Commune", nullable = false)
+    @EqualsAndHashCode.Include
+    private Integer id;
+
+    @Column(name = "Commune", length = 100)
     private String commune;
-    
-    @Size(max = 100, message = "Province must not exceed 100 characters")
-    @Column(name = "Province")
+
+    @Column(name = "District", length = 100)
+    private String district;
+
+    @Column(name = "Province", nullable = false, length = 100)
     private String province;
-    
-    @Size(max = 100, message = "Country must not exceed 100 characters")
-    @Column(name = "Country")
+
+    @Column(name = "Country", nullable = false, length = 100)
     private String country;
-    
-    // Constructors
-    public Area() {}
-    
-    public Area(String commune, String province, String country) {
-        this.commune = commune;
-        this.province = province;
-        this.country = country;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public String getCommune() {
-        return commune;
-    }
-    
-    public void setCommune(String commune) {
-        this.commune = commune;
-    }
-    
-    public String getProvince() {
-        return province;
-    }
-    
-    public void setProvince(String province) {
-        this.province = province;
-    }
-    
-    public String getCountry() {
-        return country;
-    }
-    
-    public void setCountry(String country) {
-        this.country = country;
-    }
+
+    @Column(name = "Latitude", precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(name = "Longitude", precision = 9, scale = 6)
+    private BigDecimal longitude;
+
+    @Column(name = "Description", length = 500)
+    private String description;
+
+    @OneToMany(mappedBy = "area", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Cctv> cctvs = new HashSet<>();
+
+    @OneToMany(mappedBy = "area", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<DetailAreaAccount> detailAreaAccounts = new HashSet<>();
+
+    @OneToMany(mappedBy = "missingArea", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<MissingDocument> missingDocuments = new HashSet<>();
+
+    @OneToMany(mappedBy = "sightingArea", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<VolunteerReport> volunteerReports = new HashSet<>();
 }

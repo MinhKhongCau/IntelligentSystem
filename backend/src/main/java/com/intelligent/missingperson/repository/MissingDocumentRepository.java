@@ -9,15 +9,15 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MissingDocumentRepository extends JpaRepository<MissingDocument, Long> {
-    List<MissingDocument> findByStatus(Boolean status);
+public interface MissingDocumentRepository extends JpaRepository<MissingDocument, Integer> {
     
-    @Query("SELECT md FROM MissingDocument md WHERE md.name LIKE %:name%")
+    @Query(value = "SELECT * FROM MISSING_DOCUMENT md WHERE md.FullName LIKE '%:name%'", nativeQuery = true)
     List<MissingDocument> findByNameContaining(@Param("name") String name);
     
-    @Query("SELECT md FROM MissingDocument md WHERE md.missingArea.id = :areaId")
-    List<MissingDocument> findByMissingAreaId(@Param("areaId") Long areaId);
+    @Query(value = "SELECT * FROM MISSING_DOCUMENT AS md WHERE md.ID_MissingArea = :areaId", nativeQuery = true)
+    List<MissingDocument> findByMissingAreaId(@Param("areaId") Integer areaId);
     
-    @Query("SELECT md FROM MissingDocument md WHERE md.reporter.id = :reporterId")
-    List<MissingDocument> findByReporterId(@Param("reporterId") Long reporterId);
+    @Query(value = "SELECT * FROM MISSING_DOCUMENT AS md WHERE md.ID_Reporter = :reporterId", nativeQuery = true)
+    List<MissingDocument> findByReporterId(@Param("reporterId") Integer reporterId);
+
 }

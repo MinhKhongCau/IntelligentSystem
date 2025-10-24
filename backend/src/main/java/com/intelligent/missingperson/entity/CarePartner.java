@@ -1,52 +1,37 @@
 package com.intelligent.missingperson.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
+import java.io.Serializable;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString(exclude = "account")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "CARE_PARTNER")
-public class CarePartner {
-    
+public class CarePartner implements Serializable {
+
     @Id
+    @EqualsAndHashCode.Include
     @Column(name = "ID")
-    private Long id;
-    
-    @Column(name = "PARNER_Status")
-    private Boolean partnerStatus;
-    
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID")
+    private Integer id;
+
+    @OneToOne
     @MapsId
+    @JoinColumn(name = "ID")
     private Account account;
-    
-    // Constructors
-    public CarePartner() {}
-    
-    public CarePartner(Boolean partnerStatus) {
-        this.partnerStatus = partnerStatus;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public Boolean getPartnerStatus() {
-        return partnerStatus;
-    }
-    
-    public void setPartnerStatus(Boolean partnerStatus) {
-        this.partnerStatus = partnerStatus;
-    }
-    
-    public Account getAccount() {
-        return account;
-    }
-    
-    public void setAccount(Account account) {
-        this.account = account;
-    }
+
+    @Column(name = "PartnerStatus", nullable = false)
+    @Builder.Default
+    private boolean partnerStatus = true;
+
+    @Column(name = "PartnerType", length = 100)
+    private String partnerType;
+
+    @Column(name = "OrganizationName", length = 255)
+    private String organizationName;
 }
