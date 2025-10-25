@@ -21,39 +21,39 @@ public class ManageDocument implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("policeId")
-    @JoinColumn(name = "ID_Police", insertable = false, updatable = false)
+    @JoinColumn(name = "id_police", insertable = false, updatable = false)
     private Police police;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("missingDocumentId")
-    @JoinColumn(name = "ID_MissingDocument", insertable = false, updatable = false)
+    @JoinColumn(name = "id_missing_document", insertable = false, updatable = false)
     private MissingDocument missingDocument;
 
     @Lob
-    @Column(name = "Description")
+    @Column(name = "description")
     private String description;
 
-    @Column(name = "FoundDate")
+    @Column(name = "foundDate")
     private LocalDateTime foundDate;
 
     @Lob
-    @Column(name = "FoundPersonPicture")
+    @Column(name = "found_person_picture")
     private String foundPersonPicture;
 
-    @Column(name = "ConfirmTime")
+    @Column(name = "confirm_time")
     private LocalDateTime confirmTime;
 
-    @Column(name = "UpdateTime")
+    @Column(name = "update_time")
     private LocalDateTime updateTime;
 
     @Lob
-    @Column(name = "Find_Place")
+    @Column(name = "find_place")
     private String findPlace;
 
-    @Column(name = "ConfirmationMethod", length = 255)
+    @Column(name = "confirmation_method", length = 255)
     private String confirmationMethod;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_FoundVolunteer")
+    @JoinColumn(name = "id_found_volunteer")
     private Volunteer foundVolunteer;
 }

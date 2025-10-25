@@ -7,6 +7,7 @@ export default function Register() {
   const [form, setForm] = useState({
     username: "",
     password: "",
+    verifyPassword: "",
     email: "",
     fullName: "",
     birthday: "",
@@ -14,7 +15,6 @@ export default function Register() {
     gender: "male",
     phone: "",
     profilePictureUrl: "",
-    accountType: "user",
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -28,6 +28,13 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+
+    // client-side verify password check
+    if (form.password !== form.verifyPassword) {
+      setMessage("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -43,7 +50,6 @@ export default function Register() {
           gender: form.gender === "male" ? true : false,
           phone: form.phone,
           profilePictureUrl: form.profilePictureUrl,
-          accountType: form.accountType,
         }),
       });
 
@@ -56,7 +62,6 @@ export default function Register() {
 
       setMessage("Registration successful");
       setLoading(false);
-      // navigate to login after short delay
       setTimeout(() => navigate("/login"), 900);
     } catch (err) {
       setMessage("Network error");
@@ -76,6 +81,15 @@ export default function Register() {
 
         <label>Password</label>
         <input name="password" type="password" value={form.password} onChange={onChange} required />
+        
+        <label>Verify password</label>
+        <input
+          name="verifyPassword"
+          type="password"
+          value={form.verifyPassword}
+          onChange={onChange}
+          required
+        />
 
         <label>Email</label>
         <input name="email" type="email" value={form.email} onChange={onChange} required />
@@ -97,16 +111,6 @@ export default function Register() {
 
         <label>Phone</label>
         <input name="phone" value={form.phone} onChange={onChange} />
-
-        <label>Profile picture URL</label>
-        <input name="profilePictureUrl" value={form.profilePictureUrl} onChange={onChange} />
-
-        <label>Account type</label>
-        <select name="accountType" value={form.accountType} onChange={onChange}>
-          <option value="user">User</option>
-          <option value="volunteer">Volunteer</option>
-          <option value="police">Police</option>
-        </select>
 
         <button type="submit" disabled={loading}>{loading ? "Registering..." : "Register"}</button>
       </form>

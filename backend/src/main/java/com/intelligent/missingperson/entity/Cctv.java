@@ -18,39 +18,39 @@ public class Cctv implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
-    @Column(name = "Name", length = 255)
+    @Column(name = "name", length = 255)
     private String name;
 
-    @Column(name = "Status", length = 50)
+    @Column(name = "status", length = 50)
     private String status;
 
     @Lob
-    @Column(name = "StreamUrl", nullable = false)
+    @Column(name = "stream_url", nullable = false)
     private String streamUrl;
 
-    @Column(name = "IP", length = 50)
+    @Column(name = "ip", length = 50)
     private String ip;
 
-    @Column(name = "Port")
+    @Column(name = "port")
     private Integer port;
 
-    @Column(name = "Latitude", precision = 9, scale = 6)
+    @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(name = "Longitude", precision = 9, scale = 6)
+    @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    @Column(name = "CameraType", length = 100)
+    @Column(name = "camera_type", length = 100)
     private String cameraType;
 
-    @Column(name = "LastOnline")
+    @Column(name = "last_online")
     private LocalDateTime lastOnline;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_Area")
+    @JoinColumn(name = "id_area")
     private Area area;
 }

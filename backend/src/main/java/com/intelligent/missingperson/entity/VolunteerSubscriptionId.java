@@ -11,9 +11,9 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Embeddable
 public class VolunteerSubscriptionId implements Serializable {
-    @Column(name = "ID_MissingDocument")
+    @Column(name = "id_missing_document")
     private Integer missingDocumentId;
 
-    @Column(name = "ID_Volunteer")
+    @Column(name = "id_volunteer")
     private Integer volunteerId;
 }

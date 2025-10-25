@@ -140,7 +140,7 @@
 		color: #000;
 	}
 	body {
-		background: #171717;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);;
 	}
 	.search-bar input {
 		box-shadow: 0 0 0 0.4em #f1f1f1 inset;

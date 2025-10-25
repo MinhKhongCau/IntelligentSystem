@@ -23,47 +23,47 @@ public class Account implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
-    @Column(name = "Username", nullable = false, length = 255)
+    @Column(name = "username", nullable = false, length = 255)
     private String username;
 
-    @Column(name = "Password", nullable = false, length = 255)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "Email", nullable = false, length = 255)
+    @Column(name = "email", nullable = false, length = 255)
     private String email;
 
-    @Column(name = "FullName", length = 255)
+    @Column(name = "fullName", length = 255)
     private String fullName;
 
-    @Column(name = "Birthday")
+    @Column(name = "birthday")
     private LocalDate birthday;
 
     @Lob
-    @Column(name = "Address", columnDefinition = "nvarchar(max)")
+    @Column(name = "address", columnDefinition = "nvarchar(max)")
     private String address;
 
     @Column(name = "Gender")
     private Boolean gender;
 
-    @Column(name = "Phone", length = 20)
+    @Column(name = "phone", length = 20)
     private String phone;
 
     @Lob
-    @Column(name = "ProfilePictureUrl", columnDefinition = "varchar(max)")
+    @Column(name = "profile_picture_url", columnDefinition = "varchar(max)")
     private String profilePictureUrl;
 
-    @Column(name = "AccountType", nullable = false, length = 50)
+    @Column(name = "account_type", nullable = false, length = 50)
     private String accountType;
 
-    @Column(name = "AccountStatus", nullable = false)
+    @Column(name = "account_status", nullable = false, insertable = false)
     @Builder.Default
     private boolean accountStatus = true;
 
-    @Column(name = "CreatedAt", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
@@ -82,5 +82,6 @@ public class Account implements Serializable {
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) createdAt = LocalDateTime.now();
+        if (accountType == null) accountType = "VOLUNTEER";
     }
 }

@@ -3,12 +3,20 @@ package com.intelligent.missingperson.service;
 import com.intelligent.missingperson.entity.Account;
 import com.intelligent.missingperson.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import javax.sql.DataSource;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +25,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DataSource dataSource;
 
     public List<Account> findAll() {
         return accountRepository.findAll();
@@ -40,6 +49,65 @@ public class AccountService {
 
     public boolean existsByEmail(String email) {
         return accountRepository.existsByEmail(email);
+    }
+
+    public Account registerAccount(Account account) {
+        // basic pre-checks (optional, procedure also checks)
+        if (accountRepository.existsByUsername(account.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (accountRepository.existsByEmail(account.getEmail())) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        // encode password
+        account.setPassword(passwordEncoder.encode(account.getPassword()));
+
+        // set createdAt default if missing
+        if (account.getCreatedAt() == null) account.setCreatedAt(LocalDateTime.now());
+        if (account.getAccountType() == null) account.setAccountType("USER");
+
+        System.out.println("---> Registering account via procedure: " + account);
+        // call stored procedure
+        SimpleJdbcCall call = new SimpleJdbcCall(dataSource)
+                .withSchemaName("dbo")
+                .withProcedureName("usp_RegisterAccount");
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("Username", account.getUsername())
+                .addValue("Password", account.getPassword())
+                .addValue("Email", account.getEmail())
+                .addValue("FullName", account.getFullName())
+                .addValue("Birthday", account.getBirthday() != null ? Date.valueOf(account.getBirthday()) : null)
+                .addValue("Address", account.getAddress())
+                .addValue("Gender", account.getGender())
+                .addValue("Phone", account.getPhone())
+                .addValue("ProfilePictureUrl", account.getProfilePictureUrl())
+                .addValue("AccountType", account.getAccountType())
+                .addValue("AccountStatus", account.isAccountStatus());
+
+        Map<String, Object> out = call.execute(params);
+
+        // procedure outputs
+        Number statusNum = (Number) out.get("StatusCode");
+        Number newIdNum = (Number) out.get("NewId");
+        String message = out.get("Message") != null ? out.get("Message").toString() : null;
+
+        int status = statusNum != null ? statusNum.intValue() : -1;
+
+        System.out.println("---> Register procedure returned status=" + status + ", newId=" + newIdNum + ", message=" + message);
+        if (status == 0) {
+            Integer newId = newIdNum != null ? newIdNum.intValue() : null;
+            if (newId == null) {
+                throw new IllegalStateException("Procedure reported success but did not return new id");
+            }
+            Optional<Account> saved = accountRepository.findById(newId);
+            return saved.orElseThrow(() -> new IllegalStateException("Account created but cannot be loaded, id=" + newId));
+        } else if (status == 1 || status == 2) {
+            throw new IllegalArgumentException(message != null ? message : "Duplicate username/email");
+        } else {
+            throw new IllegalStateException("Register procedure failed: " + (message != null ? message : "unknown error"));
+        }
     }
 
     public Account save(Account account) {

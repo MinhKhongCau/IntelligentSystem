@@ -18,24 +18,24 @@ import java.io.Serializable;
 public class Police implements Serializable {
 
     @Id
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "ID")
+    @JoinColumn(name = "id")
     private Account account;
 
-    @Column(name = "PoliceCode", length = 50)
+    @Column(name = "police_code", length = 50)
     private String policeCode;
 
-    @Column(name = "Rank", length = 100)
+    @Column(name = "rank", length = 100)
     private String rank;
 
-    @Column(name = "Station", length = 255)
+    @Column(name = "station", length = 255)
     private String station;
 
-    @Column(name = "Patrol_Car_number", length = 255)
+    @Column(name = "patrol_car_number", length = 255)
     private String patrolCarNumber;
 }

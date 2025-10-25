@@ -18,40 +18,40 @@ public class VolunteerReport implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_MissingDocument", nullable = false)
+    @JoinColumn(name = "id_missing_document", nullable = false)
     private MissingDocument missingDocument;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_Volunteer", nullable = false)
+    @JoinColumn(name = "id_volunteer", nullable = false)
     private Volunteer volunteer;
 
-    @Column(name = "ReportTime", nullable = false)
+    @Column(name = "report_time", nullable = false)
     private LocalDateTime reportTime;
 
     @Lob
-    @Column(name = "SightingPicture")
+    @Column(name = "sighting_picture")
     private String sightingPicture;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SightingAreaID")
+    @JoinColumn(name = "sighting_area_id")
     private Area sightingArea;
 
-    @Column(name = "Latitude", precision = 9, scale = 6)
+    @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(name = "Longitude", precision = 9, scale = 6)
+    @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
     @Lob
-    @Column(name = "Description")
+    @Column(name = "description")
     private String description;
 
-    @Column(name = "ReportStatus", nullable = false, length = 50)
+    @Column(name = "report_status", nullable = false, length = 50)
     @Builder.Default
     private String reportStatus = "Submitted";
 

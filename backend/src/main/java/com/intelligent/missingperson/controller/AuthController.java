@@ -4,8 +4,9 @@ import com.intelligent.missingperson.dto.LoginRequest;
 import com.intelligent.missingperson.dto.LoginResponse;
 import com.intelligent.missingperson.dto.RegisterRequest;
 import com.intelligent.missingperson.entity.Account;
-import com.intelligent.missingperson.repository.AccountRepository;
 import com.intelligent.missingperson.security.JwtTokenProvider;
+import com.intelligent.missingperson.service.AccountService;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,7 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private AccountRepository accountRepository;
+    private AccountService accountService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -41,7 +42,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        Optional<Account> optAccount = accountRepository.findByUsername(loginRequest.getUsername());
+        Optional<Account> optAccount = accountService.findByUsername(loginRequest.getUsername());
         if (optAccount.isEmpty()) {
             return ResponseEntity.status(401).body("Invalid username or password");
         }
@@ -73,13 +74,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        if (accountRepository.existsByUsername(registerRequest.getUsername())) {
-            return ResponseEntity.badRequest().body("Error: Username is already taken!");
-        }
-
-        if (accountRepository.existsByEmail(registerRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("Error: Email is already in use!");
-        }
+        System.out.println("---> RegisterRequest: " + registerRequest);
 
         Account account = Account.builder()
                 .username(registerRequest.getUsername())
@@ -91,10 +86,9 @@ public class AuthController {
                 .gender(registerRequest.getGender())
                 .phone(registerRequest.getPhone())
                 .profilePictureUrl(registerRequest.getProfilePictureUrl())
-                .accountType(registerRequest.getAccountType())
                 .build();
 
-        Account saved = accountRepository.save(account);
+        Account saved = accountService.save(account);
         saved.setPassword(null);
 
         Map<String, Object> resp = new HashMap<>();
@@ -117,7 +111,7 @@ public class AuthController {
         }
 
         String username = authentication.getName();
-        Optional<Account> opt = accountRepository.findByUsername(username);
+        Optional<Account> opt = accountService.findByUsername(username);
         if (opt.isEmpty()) {
             return ResponseEntity.status(401).body("User not found");
         }

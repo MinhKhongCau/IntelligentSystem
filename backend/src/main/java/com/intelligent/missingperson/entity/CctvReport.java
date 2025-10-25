@@ -17,48 +17,48 @@ public class CctvReport implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_CCTV")
+    @JoinColumn(name = "id_cctv")
     private Cctv cctv;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_MissingDocument")
+    @JoinColumn(name = "id_missing_document")
     private MissingDocument missingDocument;
 
     @Lob
-    @Column(name = "Detail")
+    @Column(name = "detail")
     private String detail;
 
-    @Column(name = "TimeReport", nullable = false)
+    @Column(name = "time_report", nullable = false)
     private LocalDateTime timeReport;
 
-    @Column(name = "ConfirmationStatus", nullable = false, length = 50)
+    @Column(name = "confirmation_status", nullable = false, length = 50)
     @Builder.Default
     private String confirmationStatus = "Pending_Review";
 
-    @Column(name = "Confident")
+    @Column(name = "confident")
     private Double confident;
 
-    @Column(name = "DetectionLog", length = 255)
+    @Column(name = "detection_log", length = 255)
     private String detectionLog;
 
     @Lob
-    @Column(name = "DetectPicture")
+    @Column(name = "detect_picture")
     private String detectPicture;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_PoliceReviewer")
+    @JoinColumn(name = "id_police_reviewer")
     private Police policeReviewer;
 
-    @Column(name = "ReviewTime")
+    @Column(name = "review_time")
     private LocalDateTime reviewTime;
 
     @Lob
-    @Column(name = "ReviewNotes")
+    @Column(name = "review_notes")
     private String reviewNotes;
 
     @PrePersist

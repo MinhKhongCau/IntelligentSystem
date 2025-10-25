@@ -16,27 +16,27 @@ import java.time.LocalDate;
 public class Volunteer implements Serializable {
 
     @Id
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "ID")
+    @JoinColumn(name = "id")
     private Account account;
 
-    @Column(name = "VolunteerStatus", nullable = false)
+    @Column(name = "volunteer_status", nullable = false)
     @Builder.Default
     private boolean volunteerStatus = true;
 
-    @Column(name = "DateJoined")
+    @Column(name = "date_joined")
     private LocalDate dateJoined;
 
     @Lob
-    @Column(name = "Skills")
+    @Column(name = "skills")
     private String skills;
 
-    @Column(name = "Rating")
+    @Column(name = "rating")
     @Builder.Default
     private Double rating = 3.0;
 }

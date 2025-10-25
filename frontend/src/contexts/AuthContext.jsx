@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Check for existing token and user data on app load
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
       
       // Set axios default header
       axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
@@ -38,12 +40,15 @@ export const AuthProvider = ({ children }) => {
         username,
         password
       });
-
-      if (response.data.token) {
-        const userData = { username };
+      
+      console.log('Login response:', response.data);
+      if (response.data.accessToken) {
+        const userData = response.data.account || {};
         
-        setToken(response.data.token);
+        console.log('Login successful:', userData);
+        setToken(response.data.accessToken);
         setUser(userData);
+        setIsAuthenticated(true);
         
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(userData));
@@ -51,7 +56,7 @@ export const AuthProvider = ({ children }) => {
         // Set axios default header
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
         
-        return { success: true };
+        return { success: true, account: userData };
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -77,15 +82,14 @@ export const AuthProvider = ({ children }) => {
       // Clear state and localStorage
       setToken(null);
       setUser(null);
+      setIsAuthenticated(false);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       delete axios.defaults.headers.common['Authorization'];
     }
   };
 
-  const isAuthenticated = () => {
-    return !!token && !!user;
-  };
+  const isAuthenticatedFn = () => !!isAuthenticated;
 
   const value = {
     user,

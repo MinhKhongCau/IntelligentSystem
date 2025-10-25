@@ -11,9 +11,9 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Embeddable
 public class DetailAreaAccountId implements Serializable {
-    @Column(name = "ID_Area")
+    @Column(name = "id_area")
     private Integer areaId;
 
-    @Column(name = "ID_Account")
+    @Column(name = "id_account")
     private Integer accountId;
 }

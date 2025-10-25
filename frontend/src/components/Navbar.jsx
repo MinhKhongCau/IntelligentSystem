@@ -40,7 +40,7 @@ const Navbar = () => {
           </div>
 
           <div className="navbar-auth">
-            {isAuthenticated() ? (
+            {isAuthenticated ? (
               <div className="auth-section">
                 <span className="user-welcome">Welcome, {user?.username}</span>
                 <Link to="/dashboard" className="nav-button">Dashboard</Link>

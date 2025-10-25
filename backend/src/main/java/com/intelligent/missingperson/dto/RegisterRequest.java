@@ -44,8 +44,4 @@ public class RegisterRequest {
 
     @Size(max = 1000)
     private String profilePictureUrl;
-
-    @NotBlank(message = "Account type is required")
-    @Size(max = 50)
-    private String accountType;
 }

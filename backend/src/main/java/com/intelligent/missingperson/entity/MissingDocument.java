@@ -20,66 +20,66 @@ public class MissingDocument implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
-    @Column(name = "FullName", nullable = false, length = 255)
+    @Column(name = "full_name", nullable = false, length = 255)
     private String fullName;
 
-    @Column(name = "Birthday")
+    @Column(name = "birthday")
     private LocalDate birthday;
 
-    @Column(name = "Gender")
+    @Column(name = "gender")
     private Boolean gender;
 
-    @Column(name = "IdentityCardNumber", length = 100)
+    @Column(name = "identity_card_number", length = 100)
     private String identityCardNumber;
 
-    @Column(name = "Height", length = 20)
+    @Column(name = "height", length = 20)
     private String height;
 
-    @Column(name = "Weight", length = 20)
+    @Column(name = "weight", length = 20)
     private String weight;
 
     @Lob
-    @Column(name = "IdentifyingCharacteristic")
+    @Column(name = "identifying_characteristic")
     private String identifyingCharacteristic;
 
     @Lob
-    @Column(name = "LastKnownOutfit")
+    @Column(name = "last_known_outfit")
     private String lastKnownOutfit;
 
     @Lob
-    @Column(name = "MedicalConditions")
+    @Column(name = "medical_conditions")
     private String medicalConditions;
 
     @Lob
-    @Column(name = "FacePictureUrl", nullable = false)
+    @Column(name = "face_picture_url", nullable = false)
     private String facePictureUrl;
 
-    @Column(name = "MissingTime", nullable = false)
+    @Column(name = "missing_time", nullable = false)
     private LocalDateTime missingTime;
 
-    @Column(name = "ReportDate", nullable = false)
+    @Column(name = "report_date", nullable = false)
     private LocalDateTime reportDate;
 
-    @Column(name = "UpdateDate")
+    @Column(name = "update_date")
     private LocalDateTime updateDate;
 
-    @Column(name = "CaseStatus", nullable = false, length = 50)
+    @Column(name = "case_status", nullable = false, length = 50)
     @Builder.Default
     private String caseStatus = "Missing";
 
-    @Column(name = "ReporterRelationship", length = 100)
+    @Column(name = "reporter_relationship", length = 100)
     private String reporterRelationship;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_MissingArea")
+    @JoinColumn(name = "id_missing_area")
     private Area missingArea;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_Reporter")
+    @JoinColumn(name = "id_reporter")
     private CarePartner reporter;
 
     @OneToMany(mappedBy = "missingDocument", cascade = CascadeType.ALL, orphanRemoval = true)

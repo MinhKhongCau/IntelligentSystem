@@ -21,18 +21,18 @@ public class VolunteerSubscription implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("missingDocumentId")
-    @JoinColumn(name = "ID_MissingDocument", insertable = false, updatable = false)
+    @JoinColumn(name = "id_missing_document", insertable = false, updatable = false)
     private MissingDocument missingDocument;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("volunteerId")
-    @JoinColumn(name = "ID_Volunteer", insertable = false, updatable = false)
+    @JoinColumn(name = "id_volunteer", insertable = false, updatable = false)
     private Volunteer volunteer;
 
-    @Column(name = "SubscribedDate", nullable = false)
+    @Column(name = "subscribed_date", nullable = false)
     private LocalDateTime subscribedDate;
 
-    @Column(name = "IsActive", nullable = false)
+    @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean isActive = true;
 

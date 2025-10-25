@@ -1,86 +1,76 @@
-import React, { useEffect, useState } from 'react'
-import Missingcard from './Missingcard'
-import "./MissingList.css"
-import "./Searchcss.css"
-import notfound from "./nodata.gif"
-import locationimg from "./Locationnew.png"
-// import SearchButton from './SearchButton'
+import React, { useEffect, useState } from 'react';
+import Missingcard from './Missingcard';
+import './MissingList.css';
+import './Searchcss.css';
+import locationimg from './Locationnew.png';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const MissingList = () => {
+  const [items, setItems] = useState([]);
+  const [query, setQuery] = useState('');
+  const [input, setInput] = useState('');
 
-    const [location, setLocation] = useState([])
-    const [text, setText] = useState('')
-    const [current, setcurrent] = useState('')
-
-    const handleinput=(e)=>{
-      if(e.target.value===""){
-        setText("")
-      }
-      setcurrent(e.target.value)
+  const getdata = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/foundlocation/getalllocations`);
+      const data = await response.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setItems([]);
     }
-    const handleclick=()=>{
-      setText(current)
-    }
-    const getdata= async ()=>{
-        const response= await fetch("http://localhost:5000/api/foundlocation/getalllocations");
+  };
 
-        let data=await response.json();
-        console.log(data)
-        setLocation(data)
-    }
-    useEffect(() => {
-        getdata();
-    
-    }, [])
-    
+  useEffect(() => {
+    getdata();
+  }, []);
 
+  const handleSearch = () => setQuery(input.trim());
+
+  const filtered = items.filter((el) => {
+    if (!query) return true;
+    return String(el.adhaar_number || el.adhaar || '').includes(query);
+  });
 
   return (
-        <div className='missingloc'>
+    <div className="missingloc">
       <div className="headerlist text-4xl">
-      <div className="subheadinglist">
-        <div>Tracked Locations</div>
-        <img src={locationimg} alt="" srcset="" width="50px"/> 
+        <div className="subheadinglist">
+          <div>Tracked Locations</div>
+          <img src={locationimg} alt="" width="50" />
         </div>
       </div>
 
-    
       <div className="input-group">
-      <div><div  class="search-bar">
-	<input type="search" placeholder='search location by adhaar' name="search" pattern=".*\S.*" required onChange={handleinput} value={current}/>
-	<button class="search-btn" onClick={handleclick}/>
-	
-	
-</div></div>
-     </div>   
+        <div>
+          <div className="search-bar">
+            <input type="search" placeholder="search location by adhaar" name="search" onChange={(e) => setInput(e.target.value)} value={input} />
+            <button className="search-btn" onClick={handleSearch} />
+          </div>
+        </div>
+      </div>
 
-    <div className='contentlist'>
-    
-    {
-        location.map((element,idx)=>{
-
-            if(text===""){
-              return (
-                <Missingcard name={element.name} adhaar={element.adhaar_number} date={element.date} region={element.location.region} latitude={element.location.latitude} longitude={element.location.longitude} country={element.location.country} state={element.location.city} key={`${element.adhaar_number}_${element.date}`}/>
-              );
-            }
-            else if(element.adhaar_number===text){
-              return (<Missingcard name={element.name} adhaar={text} date={element.date} region={element.location.region} latitude={element.location.latitude} longitude={element.location.longitude} country={element.location.country} state={element.location.city} key={`${element.adhaar}_${element.date}`}/>);
-            }
-            
-              
-            
-            return <div></div>;
-
-              
-
-            
-        })
-    }
- 
-   
+      <div className="contentlist">
+        {filtered.length === 0 ? (
+          <div className="no-data">No locations found</div>
+        ) : (
+          filtered.map((element) => (
+            <Missingcard
+              key={`${element.adhaar_number}_${element.date}`}
+              name={element.name}
+              adhaar={element.adhaar_number}
+              date={element.date}
+              region={element.location?.region}
+              latitude={element.location?.latitude}
+              longitude={element.location?.longitude}
+              country={element.location?.country}
+              state={element.location?.city}
+            />
+          ))
+        )}
+      </div>
     </div>
-    </div>
-  )
-}
+  );
+};
 
-export default MissingList
+export default MissingList;

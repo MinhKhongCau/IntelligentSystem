@@ -71,6 +71,9 @@ form .input-box span.details{
 .user-details .input-box input:valid{
   border-color: #9b59b6;
 }
+ form .gender{
+   margin-left: 10px;
+ }
  form .gender-details .gender-title{
   font-size: 20px;
   font-weight: 500;
@@ -101,14 +104,14 @@ form .input-box span.details{
    background: #9b59b6;
    border-color: #d9d9d9;
  }
- form input[type="radio"]{
+ /* form input[type="radio"]{
    display: none;
- }
+ } */
  form .button{
    height: 45px;
    margin: 35px 0
  }
- form .button input{
+ form .button button{
    height: 100%;
    width: 100%;
    border-radius: 5px;
@@ -119,12 +122,12 @@ form .input-box span.details{
    letter-spacing: 1px;
    cursor: pointer;
    transition: all 0.3s ease;
-   background:#4154f1;
+   background-color: #a2b6ec
  }
  /* #4154f1 */
- form .button input:hover{
+ form .button button:hover{
   /* transform: scale(0.99); */
-  background: #7381ff;
+  background: #667eea;
   }
  @media(max-width: 584px){
  .container{

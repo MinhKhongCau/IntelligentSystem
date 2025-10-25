@@ -21,11 +21,11 @@ public class DetailAreaAccount implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("accountId")
-    @JoinColumn(name = "ID_Account", insertable = false, updatable = false)
+    @JoinColumn(name = "id_account", insertable = false, updatable = false)
     private Account account;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("areaId")
-    @JoinColumn(name = "ID_Area", insertable = false, updatable = false)
+    @JoinColumn(name = "id_area", insertable = false, updatable = false)
     private Area area;
 }

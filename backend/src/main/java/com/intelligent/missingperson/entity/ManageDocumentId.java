@@ -11,9 +11,9 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Embeddable
 public class ManageDocumentId implements Serializable {
-    @Column(name = "ID_Police")
+    @Column(name = "id_police")
     private Integer policeId;
 
-    @Column(name = "ID_MissingDocument")
+    @Column(name = "id_missing_document")
     private Integer missingDocumentId;
 }

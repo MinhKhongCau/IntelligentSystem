@@ -19,29 +19,29 @@ public class Area implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     @EqualsAndHashCode.Include
     private Integer id;
 
-    @Column(name = "Commune", length = 100)
+    @Column(name = "commune", length = 100)
     private String commune;
 
-    @Column(name = "District", length = 100)
+    @Column(name = "district", length = 100)
     private String district;
 
-    @Column(name = "Province", nullable = false, length = 100)
+    @Column(name = "province", nullable = false, length = 100)
     private String province;
 
-    @Column(name = "Country", nullable = false, length = 100)
+    @Column(name = "country", nullable = false, length = 100)
     private String country;
 
-    @Column(name = "Latitude", precision = 9, scale = 6)
+    @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(name = "Longitude", precision = 9, scale = 6)
+    @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    @Column(name = "Description", length = 500)
+    @Column(name = "description", length = 500)
     private String description;
 
     @OneToMany(mappedBy = "area", cascade = CascadeType.ALL, orphanRemoval = true)
