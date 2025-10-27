@@ -26,17 +26,10 @@ const Navbar = () => {
         <div className="navbar-menu">
           <div className={`navbar-links ${menu ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
-            <Link to="/Missingpeople" className="nav-link">Missing List</Link>
-            <Link to="/Formmissing" className="nav-link">Report Case</Link>
+            <Link to="/missingpeople" className="nav-link">Missing List</Link>
+            <Link to="/formmissing" className="nav-link">Report Case</Link>
             <Link to="/locations" className="nav-link">Locations</Link>
-            <a 
-              href="http://localhost:8501/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="nav-link"
-            >
-              Surveillance
-            </a>
+            <Link to="/missinglocations" className="nav-link"> Surveillance </Link>
           </div>
 
           <div className="navbar-auth">

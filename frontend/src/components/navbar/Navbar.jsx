@@ -22,7 +22,7 @@ const Navbar = () => {
                     </Link>
                 </li>
                 <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center" onclick="dropdownHandler(this)">
-                    <a href="http://localhost:8501/">
+                    <a href="/locations">
                         <span className="ml-2 font-bold">Surveillance Area</span>
                     </a>
                 </li>
@@ -67,16 +67,16 @@ const Navbar = () => {
                     <Link className="hover:text-indigo-500 text-lg focus:text-indigo-500" to="/">Home</Link>
                 </li>
                 <li className="ml-4 hover:text-indigo-500 ">
-                    <a className="focus:text-indigo-500 text-lg" href="http://localhost:8501/">Surveillance Area</a>
+                    <a className="focus:text-indigo-500 text-lg" href="/locations">Surveillance Area</a>
                 </li>
                 <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
-                    <Link className="focus:text-indigo-500 text-lg" to="/Formmissing">Report case</Link>
+                    <Link className="focus:text-indigo-500 text-lg" to="/formmissing">Report case</Link>
                 </li>
                 <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
-                    <Link className="focus:text-indigo-500 text-lg" to="/Missingpeople">Missing List</Link>
+                    <Link className="focus:text-indigo-500 text-lg" to="/missingpeople">Missing List</Link>
                 </li>
                 <li className="ml-4 hover:text-indigo-500 focus:text-indigo-500">
-                    <Link className="focus:text-indigo-500 text-lg"  to="/locations">Tracked locations</Link>
+                    <Link className="focus:text-indigo-500 text-lg"  to="/findbylocations">Tracked locations</Link>
                 </li>
             </ul>
             <div className="pl-40">

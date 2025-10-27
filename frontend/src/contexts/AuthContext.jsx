@@ -14,7 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -35,12 +35,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password) => {
+    setLoading(true);
     try {
       const response = await axios.post('http://localhost:8080/api/auth/login', {
         username,
         password
       });
       
+      setLoading(false);
       console.log('Login response:', response.data);
       if (response.data.accessToken) {
         const userData = response.data.account || {};
@@ -50,15 +52,16 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setIsAuthenticated(true);
         
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('token', response.data.accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
         
         // Set axios default header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
         
         return { success: true, account: userData };
       }
     } catch (error) {
+      setLoading(false);
       console.error('Login error:', error);
       return { 
         success: false, 

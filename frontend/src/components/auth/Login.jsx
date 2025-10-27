@@ -4,7 +4,7 @@ import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
-  const { login, loading } = useAuth();
+  const { login, loading, setLoading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''

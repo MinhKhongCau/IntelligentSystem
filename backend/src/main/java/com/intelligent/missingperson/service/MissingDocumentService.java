@@ -33,4 +33,10 @@ public class MissingDocumentService {
     public boolean existsById(Integer id) {
         return missingDocumentRepository.existsById(id);
     }
+
+    public List<MissingDocument> findByFullNameContaining(String name) {
+        return missingDocumentRepository.findByFullNameContaining(name);
+    }
+
+    
 }

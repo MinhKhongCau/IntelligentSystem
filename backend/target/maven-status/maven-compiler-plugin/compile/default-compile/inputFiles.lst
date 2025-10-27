@@ -4,6 +4,7 @@
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/service/MissingDocumentService.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/repository/AreaRepository.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/Area.java
+/home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/dto/AreaRequest.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/security/JwtTokenProvider.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/Account.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/dto/LoginRequest.java
@@ -17,6 +18,7 @@
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/controller/AuthController.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/dto/JwtAuthenticationResponse.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/CarePartner.java
+/home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/config/WebConfig.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/config/SecurityConfig.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/CctvReport.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/controller/MissingDocumentController.java
@@ -24,6 +26,7 @@
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/VolunteerSubscription.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/Police.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/config/AuthenticationConfig.java
+/home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/controller/ImageController.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/controller/CarePartnerController.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/DetailAreaAccount.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/ManageDocument.java

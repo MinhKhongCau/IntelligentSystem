@@ -19,6 +19,7 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
+import AddMissingArea from './components/missing form/AddmissingArea';
 function App() {
   return (
     <AuthProvider>
@@ -35,14 +36,19 @@ function App() {
                 <Dashboard/>
               </ProtectedRoute>
             } />
-            <Route path="/Formmissing" element={
+            <Route path="/formmissing" element={
               <ProtectedRoute>
                 <Formmissing/>
               </ProtectedRoute>
             } />
-            <Route path="/Missingpeople" element={
+            <Route path="/missingpeople" element={
               <ProtectedRoute>
                 <Missing_persons/>
+              </ProtectedRoute>
+            } />
+            <Route path="/missinglocations" element={
+              <ProtectedRoute>
+                <AddMissingArea/>
               </ProtectedRoute>
             } />
             <Route path="/locations" element={
