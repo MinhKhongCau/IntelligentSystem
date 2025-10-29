@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, roles } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -12,6 +12,10 @@ const Dashboard = () => {
     navigate('/logout');
   };
 
+  const isCarePartner = roles.includes('CARE_PARTNER');
+
+  console.log('User roles:', roles);
+  console.log('Is Care Partner:', isCarePartner);
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -72,13 +76,21 @@ const Dashboard = () => {
 
           <div className="dashboard-card">
             <h3>Register Care Partner</h3>
-            <p>Register a new care partner account</p>
-            <button 
-              onClick={() => navigate('/register-care-partner')}
-              className="card-button"
-            >
-              Register
-            </button>
+            {isCarePartner ? (
+              <>
+                <p>You are already registered as a care partner.</p>
+                <button className="card-button card-button-disabled" disabled>
+                  Registered
+                </button>
+              </>
+            ) : (
+              <>
+                <p>Register a new care partner account</p>
+                <button onClick={() => navigate('/register-care-partner')} className="card-button">
+                  Register
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -104,6 +104,12 @@
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
+.card-button-disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .dashboard-header {

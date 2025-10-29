@@ -33,8 +33,12 @@ public class CarePartnerController {
     }
 
     @GetMapping("/{id}")
-    public CarePartner getCarePartnerById(@PathVariable Integer id) {
-        return carePartnerservice.findById(id).orElse(null);
+    public ResponseEntity<?> getCarePartnerById(@PathVariable Integer id) {
+        Optional<CarePartner> carePartner = carePartnerservice.findById(id);
+        if (!carePartner.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().body(carePartner.get());
     }
 
     @PostMapping("/register")

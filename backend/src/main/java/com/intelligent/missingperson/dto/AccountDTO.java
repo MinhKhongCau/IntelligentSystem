@@ -1,6 +1,9 @@
 package com.intelligent.missingperson.dto;
 
 import java.time.LocalDate;
+import java.util.List;
+
+import com.intelligent.missingperson.until.Roles;
 
 import lombok.Builder;
 import lombok.Data;
@@ -18,4 +21,5 @@ public class AccountDTO {
     private String phone;
     private String profilePictureUrl;
     private String accountType;
+    private List<Roles> roles;
 }

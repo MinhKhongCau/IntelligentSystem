@@ -2,8 +2,11 @@ package com.intelligent.missingperson.service;
 
 import com.intelligent.missingperson.entity.Account;
 import com.intelligent.missingperson.repository.AccountRepository;
+import com.intelligent.missingperson.until.Roles;
+
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,12 +24,21 @@ import javax.sql.DataSource;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+// @Transactional
 public class AccountService {
 
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final DataSource dataSource;
+
+    @Autowired 
+    private CarePartnerService carePartnerService;
+
+    @Autowired
+    private PoliceService policeService;
+
+    @Autowired 
+    private VolunteerService volunteerService;
 
     public List<Account> findAll() {
         return accountRepository.findAll();
@@ -112,7 +125,7 @@ public class AccountService {
 
     public Account save(Account account) {
         // Encode password if it's not already encoded
-        if (account.getPassword() != null && !account.getPassword().startsWith("$2a$")) {
+        if (account.getPassword() != null && !account.getPassword().startsWith("List<Roles>a$")) {
             account.setPassword(passwordEncoder.encode(account.getPassword()));
         }
         return accountRepository.save(account);
@@ -129,7 +142,7 @@ public class AccountService {
         }
 
         // Only update password if a new one is provided
-        if (account.getPassword() != null && !account.getPassword().startsWith("$2a$")) {
+        if (account.getPassword() != null && !account.getPassword().startsWith("List<Roles>a$")) {
             account.setPassword(passwordEncoder.encode(account.getPassword()));
         } else {
             account.setPassword(existingAccount.get().getPassword());
@@ -150,5 +163,21 @@ public class AccountService {
                     return accountRepository.save(account);
                 })
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+    }
+
+    public List<Roles> getRoles(Integer id) {
+        List<Roles> roles = new ArrayList<>();
+        // All accounts are users by default
+        roles.add(Roles.USER);
+        if (carePartnerService.findById(id).isPresent()) {
+            roles.add(Roles.CARE_PARTNER);
+        }
+        if (policeService.findById(id).isPresent()) {
+            roles.add(Roles.POLICE);
+        }
+        if (volunteerService.findById(id).isPresent()) {
+            roles.add(Roles.VOLUNTEER);
+        }
+        return roles;
     }
 }

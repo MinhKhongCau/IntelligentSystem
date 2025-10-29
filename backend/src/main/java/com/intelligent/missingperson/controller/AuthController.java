@@ -7,8 +7,10 @@ import com.intelligent.missingperson.dto.RegisterRequest;
 import com.intelligent.missingperson.entity.Account;
 import com.intelligent.missingperson.security.JwtTokenProvider;
 import com.intelligent.missingperson.service.AccountService;
+import com.intelligent.missingperson.until.Roles;
 
 import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -73,6 +76,10 @@ public class AuthController {
                 .profilePictureUrl(account.getProfilePictureUrl())
                 .accountType(account.getAccountType())
                 .build();
+
+            List<Roles> roles = accountService.getRoles(account.getId());
+            accountDTO.setRoles(roles);
+
 
             LoginResponse loginResponse = LoginResponse.builder()
                 .accessToken(jwt)

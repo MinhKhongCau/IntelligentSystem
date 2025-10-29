@@ -16,16 +16,19 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
     // Check for existing token and user data on app load
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    const storedRoles = localStorage.getItem('roles');
 
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
+      setRoles(storedRoles ? JSON.parse(storedRoles) : []);
       
       // Set axios default header
       axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
@@ -43,17 +46,18 @@ export const AuthProvider = ({ children }) => {
       });
       
       setLoading(false);
-      console.log('Login response:', response.data);
       if (response.data.accessToken) {
-        const userData = response.data.accountDTO || {};
+        const { accountDTO: userData } = response.data;
         
         console.log('Login successful:', userData);
         setToken(response.data.accessToken);
         setUser(userData);
         setIsAuthenticated(true);
+        setRoles(userData.roles || []);
         
         localStorage.setItem('token', response.data.accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('roles', JSON.stringify(userData.roles || []));
         
         // Set axios default header
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
@@ -86,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
+      setRoles([]);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       delete axios.defaults.headers.common['Authorization'];
@@ -100,7 +105,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    loading
+    loading,
+    roles
   };
 
   return (
