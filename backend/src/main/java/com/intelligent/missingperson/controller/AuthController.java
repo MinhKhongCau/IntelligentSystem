@@ -1,5 +1,6 @@
 package com.intelligent.missingperson.controller;
 
+import com.intelligent.missingperson.dto.AccountDTO;
 import com.intelligent.missingperson.dto.LoginRequest;
 import com.intelligent.missingperson.dto.LoginResponse;
 import com.intelligent.missingperson.dto.RegisterRequest;
@@ -60,10 +61,22 @@ public class AuthController {
             // Do not expose password
             Account account = optAccount.get();
             account.setPassword(null);
+            AccountDTO accountDTO = AccountDTO.builder()
+                .id(account.getId())
+                .username(account.getUsername())
+                .email(account.getEmail())
+                .fullName(account.getFullName())
+                .birthday(account.getBirthday())
+                .address(account.getAddress())
+                .gender(account.getGender())
+                .phone(account.getPhone())
+                .profilePictureUrl(account.getProfilePictureUrl())
+                .accountType(account.getAccountType())
+                .build();
 
             LoginResponse loginResponse = LoginResponse.builder()
                 .accessToken(jwt)
-                .account(account)
+                .accountDTO(accountDTO)
                 .build();
 
             return ResponseEntity.ok(loginResponse);

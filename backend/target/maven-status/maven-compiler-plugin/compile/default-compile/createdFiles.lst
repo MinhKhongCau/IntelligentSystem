@@ -2,6 +2,7 @@ com/intelligent/missingperson/entity/Area.class
 com/intelligent/missingperson/repository/MissingDocumentRepository.class
 com/intelligent/missingperson/entity/VolunteerReport$VolunteerReportBuilder.class
 com/intelligent/missingperson/MissingPersonSystemApplication.class
+com/intelligent/missingperson/controller/ImageController.class
 com/intelligent/missingperson/controller/CarePartnerController.class
 com/intelligent/missingperson/config/AuthenticationConfig.class
 com/intelligent/missingperson/security/JwtAuthenticationFilter.class
@@ -12,9 +13,11 @@ com/intelligent/missingperson/service/AreaService.class
 com/intelligent/missingperson/dto/MissingDocumentRequest.class
 com/intelligent/missingperson/entity/VolunteerSubscriptionId.class
 com/intelligent/missingperson/repository/AccountRepository.class
+com/intelligent/missingperson/dto/AreaRequest.class
 com/intelligent/missingperson/entity/DetailAreaAccount.class
 com/intelligent/missingperson/entity/ManageDocument.class
 com/intelligent/missingperson/entity/VolunteerSubscription.class
+com/intelligent/missingperson/dto/RegisterCarePartnerRequest$RegisterCarePartnerRequestBuilder.class
 com/intelligent/missingperson/repository/AreaRepository.class
 com/intelligent/missingperson/dto/JwtAuthenticationResponse.class
 com/intelligent/missingperson/entity/CctvReport$CctvReportBuilder.class
@@ -39,6 +42,7 @@ com/intelligent/missingperson/entity/Account.class
 com/intelligent/missingperson/entity/CarePartner$CarePartnerBuilder.class
 com/intelligent/missingperson/config/SecurityConfig.class
 com/intelligent/missingperson/controller/MissingDocumentController.class
+com/intelligent/missingperson/dto/RegisterCarePartnerRequest.class
 com/intelligent/missingperson/security/CustomUserDetailsService.class
 com/intelligent/missingperson/dto/RegisterRequest.class
 com/intelligent/missingperson/entity/Cctv.class
@@ -47,6 +51,7 @@ com/intelligent/missingperson/entity/Volunteer.class
 com/intelligent/missingperson/entity/Area$AreaBuilder.class
 com/intelligent/missingperson/security/JwtTokenProvider.class
 com/intelligent/missingperson/service/AccountService.class
+com/intelligent/missingperson/config/WebConfig.class
 com/intelligent/missingperson/entity/MissingDocument$MissingDocumentBuilder.class
 com/intelligent/missingperson/dto/MissingDocumentRequest$MissingDocumentRequestBuilder.class
 com/intelligent/missingperson/entity/DetailAreaAccountId.class

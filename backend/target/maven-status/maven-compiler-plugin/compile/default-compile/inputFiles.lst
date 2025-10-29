@@ -14,6 +14,7 @@
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/MissingDocument.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/Cctv.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/repository/MissingDocumentRepository.java
+/home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/dto/RegisterCarePartnerRequest.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/repository/AccountRepository.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/controller/AuthController.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/dto/JwtAuthenticationResponse.java

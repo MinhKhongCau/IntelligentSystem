@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       console.log('Login response:', response.data);
       if (response.data.accessToken) {
-        const userData = response.data.account || {};
+        const userData = response.data.accountDTO || {};
         
         console.log('Login successful:', userData);
         setToken(response.data.accessToken);

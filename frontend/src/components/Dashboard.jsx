@@ -69,6 +69,17 @@ const Dashboard = () => {
               Open Surveillance
             </button>
           </div>
+
+          <div className="dashboard-card">
+            <h3>Register Care Partner</h3>
+            <p>Register a new care partner account</p>
+            <button 
+              onClick={() => navigate('/register-care-partner')}
+              className="card-button"
+            >
+              Register
+            </button>
+          </div>
         </div>
       </div>
     </div>

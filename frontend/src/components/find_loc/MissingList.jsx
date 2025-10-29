@@ -70,7 +70,7 @@ const MissingList = () => {
       </div>
 
       <div className="map-container" style={{ height: '500px', width: '90%', margin: '0 auto 2rem auto', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={[10.7769, 106.7009]} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
           {filteredItems.map((item) =>
             item.missingArea?.latitude && item.missingArea?.longitude ? (

@@ -20,6 +20,7 @@ import {
   Routes,
 } from "react-router-dom";
 import AddMissingArea from './components/missing form/AddmissingArea';
+import RegisterCarePartner from './components/role/RegisterCarePartner';
 function App() {
   return (
     <AuthProvider>
@@ -54,6 +55,11 @@ function App() {
             <Route path="/locations" element={
               <ProtectedRoute>
                 <MissingList/>
+              </ProtectedRoute>
+            } />
+            <Route path="/register-care-partner" element={
+              <ProtectedRoute>
+                <RegisterCarePartner/>
               </ProtectedRoute>
             } />
           </Routes>
