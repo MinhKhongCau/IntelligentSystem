@@ -1,6 +1,7 @@
 package com.intelligent.missingperson.controller;
 
 import com.intelligent.missingperson.dto.MissingDocumentRequest;
+import com.intelligent.missingperson.dto.MissingDocumentResponseDTO;
 import com.intelligent.missingperson.entity.*;
 import com.intelligent.missingperson.service.AreaService;
 import com.intelligent.missingperson.service.CarePartnerService;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -37,20 +40,22 @@ public class MissingDocumentController {
     @Autowired
     private CarePartnerService carePartnerService;
 
+    private static final int MIN_SQL_DATETIME_YEAR = 1753;
+
     @GetMapping
     public ResponseEntity<?> getAllMissingDocuments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String name) {
+            @RequestParam(required = false) String name) { // This name is for filtering, not the DTO field
         try {
-            List<MissingDocument> documents;
+            List<MissingDocumentResponseDTO> documents;
             if (name != null && !name.isBlank()) {
                 documents = missingDocumentService.findByFullNameContaining(name);
             } else {
                 documents = missingDocumentService.findAll();
             }
-            return ResponseEntity.ok(documents);
+            return ResponseEntity.ok(documents); // This will now return List<MissingDocumentResponseDTO>
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error retrieving documents.");
@@ -73,6 +78,11 @@ public class MissingDocumentController {
 
     @PostMapping
     public ResponseEntity<?> createMissingDocument(@Valid @RequestBody MissingDocumentRequest request) {
+        ResponseEntity<?> validationError = validateDateTimeFields(request);
+        if (validationError != null) {
+            return validationError;
+        }
+
         try {
             Optional<Area> areaOpt = areaService.findById(request.getMissingAreaId());
             Optional<CarePartner> reporterOpt = carePartnerService.findById(request.getReporterId());
@@ -117,6 +127,11 @@ public class MissingDocumentController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMissingDocument(@PathVariable Integer id,
                                                  @Valid @RequestBody MissingDocumentRequest request) {
+        ResponseEntity<?> validationError = validateDateTimeFields(request);
+        if (validationError != null) {
+            return validationError;
+        }
+
         try {
             Optional<MissingDocument> existingDoc = missingDocumentService.findById(id);
             if (existingDoc.isEmpty()) {
@@ -188,6 +203,11 @@ public class MissingDocumentController {
     ) {
         try {
             System.out.println("---> Received request: " + request);
+
+            ResponseEntity<?> validationError = validateDateTimeFields(request);
+            if (validationError != null) {
+                return validationError;
+            }
             // validate DTO binding
             if (bindingResult.hasErrors()) {
                 StringBuilder sb = new StringBuilder();
@@ -258,5 +278,21 @@ public class MissingDocumentController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error creating missing person: " + e.getMessage());
         }
+    }
+
+    private ResponseEntity<?> validateDateTimeFields(MissingDocumentRequest request) {
+        // Validate birthday
+        if (request.getBirthday() != null && request.getBirthday().getYear() < MIN_SQL_DATETIME_YEAR) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Birthday year cannot be before " + MIN_SQL_DATETIME_YEAR + " due to database limitations.");
+        }
+
+        // Validate missingTime
+        if (request.getMissingTime() != null && request.getMissingTime().getYear() < MIN_SQL_DATETIME_YEAR) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Missing time year cannot be before " + MIN_SQL_DATETIME_YEAR + " due to database limitations.");
+        }
+
+        return null; // No validation errors
     }
 }

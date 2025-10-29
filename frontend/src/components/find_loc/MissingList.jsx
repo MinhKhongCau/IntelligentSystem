@@ -76,7 +76,7 @@ const MissingList = () => {
             item.missingArea?.latitude && item.missingArea?.longitude ? (
               <Marker key={item.id} position={[item.missingArea.latitude, item.missingArea.longitude]}>
                 <Popup>
-                  <b>{item.fullName}</b>
+                  <b>{item.name}</b> {/* Changed from item.fullName to item.name */}
                   <br />
                   Last seen: {item.missingArea.province}, {item.missingArea.country}
                 </Popup>

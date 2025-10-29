@@ -2,8 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import missingimg from './missingguy.png';
 import './Missing_persons.css';
 import PersonCard from './PersonCard';
+import axios from 'axios'; // <-- Nên dùng axios để nhất quán
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const Missing_persons = () => {
   const [cases, setCases] = useState([]);
@@ -14,11 +15,12 @@ const Missing_persons = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/api/missingpeople/getallpersons`);
-      const data = await res.json();
-      setCases(Array.isArray(data) ? data : []);
+      const res = await axios.get(`${API_BASE}/api/missing-documents`);
+      
+      setCases(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      setError('Failed to load cases');
+      console.error("Error fetching data:", err);
+      setError('Failed to load cases. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -28,17 +30,9 @@ const Missing_persons = () => {
     getdata();
   }, [getdata]);
 
-  // remove deleted id from state
-  const handleDeleted = (adhaarId) => {
-    setCases((prev) => prev.filter((c) => c.adhaar_number !== adhaarId));
+  const handleDeleted = (id) => {
+    setCases((prev) => prev.filter((c) => c.id !== id));
   };
-
-  function arrayBufferToBase64(buffer) {
-    var binary = '';
-    var bytes = [].slice.call(new Uint8Array(buffer));
-    bytes.forEach((b) => (binary += String.fromCharCode(b)));
-    return window.btoa(binary);
-  }
 
   return (
     <div className="personwhole" style={{ backgroundColor: '#f1f1f1' }}>
@@ -49,25 +43,25 @@ const Missing_persons = () => {
         </div>
       </div>
 
-      {loading && <div>Loading...</div>}
-      {error && <div className="error">{error}</div>}
+      {loading && <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>}
+      {error && <div className="error" style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>{error}</div>}
 
       <div className="contentlist">
         {cases.map((element) => {
-          const base64string = arrayBufferToBase64(element.image.data.data);
-          const src = `data:image/png;base64,${base64string}`;
+          // Handle URL Image
+          const imageUrl = element.facePictureUrl?.startsWith('http') 
+            ? element.facePictureUrl 
+            : `${API_BASE}${element.facePictureUrl}`;
+
           return (
             <PersonCard
-              key={element.adhaar_number}
-              name={element.name}
-              adhaar={element.adhaar_number}
-              email={element.email}
-              date={element.Date_missing?.substring(0, 10)}
-              height={element.height?.$numberDecimal}
-              identification={element.identification}
-              gender={element.Gender}
-              address={element.address}
-              image={src}
+              key={element.id}
+              id={element.id}
+              name={element.fullName} 
+              image={imageUrl}
+              missingTime={element.missingTime}
+              caseStatus={element.caseStatus}
+              missingArea={element.missingArea} 
               onDelete={handleDeleted}
             />
           );

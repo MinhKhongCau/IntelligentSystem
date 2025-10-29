@@ -1,57 +1,33 @@
 package com.intelligent.missingperson.dto;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MissingDocumentRequest {
+public class MissingDocumentResponseDTO {
     private Integer id;
-
-    @NotBlank(message = "Name is required")
-    private String name;
-
+    private String name; // Corresponds to fullName in entity
     private LocalDate birthday;
-
     private Boolean gender;
-
     private String identityCardNumber;
-
     private String height;
-
     private String weight;
-
     private String identifyingCharacteristic;
-
     private String lastKnownOutfit;
-
     private String medicalConditions;
-
-    @NotBlank(message = "Face picture url is required")
     private String facePictureUrl;
-
-    @NotNull(message = "Missing time is required")
     private LocalDateTime missingTime;
-
     private LocalDateTime reportDate;
-
     private String reporterRelationship;
-
-    @NotNull(message = "Missing area id is required")
-    private Integer missingAreaId;
-
-    @NotNull(message = "Reporter id is required")
-    private Integer reporterId;
-
+    private AreaDTO missingArea; // Full Area object for display
+    private Integer reporterId; // Only ID needed for reporter
     private String caseStatus;
-
 }
