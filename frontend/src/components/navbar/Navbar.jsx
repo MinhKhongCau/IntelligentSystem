@@ -26,11 +26,6 @@ const Navbar = () => {
                         <span className="ml-2 font-bold">Surveillance Area</span>
                     </a>
                 </li>
-                <li className="flex cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 flex items-center focus:text-indigo-700 focus:outline-none">
-                    <Link to="/Formmissing">
-                        <span className="ml-2 font-bold">Report case</span>
-                    </Link>
-                </li>
                 <li className="flex flex-col cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none flex justify-center" onclick="dropdownHandler(this)">
                     <Link to="/Missingpeople">
                         <span className="ml-2 font-bold">Missing List</span>

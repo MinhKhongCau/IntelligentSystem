@@ -27,7 +27,7 @@ const Navbar = () => {
           <div className={`navbar-links ${menu ? 'active' : ''}`}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/missingpeople" className="nav-link">Missing List</Link>
-            <Link to="/formmissing" className="nav-link">Report Case</Link>
+            {/* <Link to="/formmissing" className="nav-link">Report Case</Link> */}
             <Link to="/locations" className="nav-link">Locations</Link>
             <Link to="/missinglocations" className="nav-link"> Surveillance </Link>
           </div>

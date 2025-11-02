@@ -41,17 +41,31 @@ const Dashboard = () => {
             </button>
           </div>
 
-          <div className="dashboard-card">
-            <h3>Report Missing Person</h3>
-            <p>Submit a new missing person report</p>
-            <button 
-              onClick={() => navigate('/Formmissing')}
-              className="card-button"
-            >
-              Submit Report
-            </button>
-          </div>
-
+          {!isCarePartner ? (
+            <div className="dashboard-card">
+              <h3>Report Missing Person</h3>
+              <p>Submit a new missing person report</p>
+              <button 
+                onClick={() => navigate('/Formmissing')}
+                className="card-button"
+              >
+                Submit Report
+              </button>
+            </div>
+          ) : (
+            <div className="dashboard-card">
+              <h3>Report Missing Person</h3>
+              <p>You must be a care partner to submit a report</p>
+              <button 
+                className="card-button"
+                disabled
+              >
+                Submit a report
+              </button>
+            </div>
+            )
+          }
+          
           <div className="dashboard-card">
             <h3>Tracked Locations</h3>
             <p>View location tracking data</p>
