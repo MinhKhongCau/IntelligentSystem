@@ -8,6 +8,9 @@ import chromadb
 from mtcnn import MTCNN
 from FaceData import FaceData
 from IdentityResult import IdentityResult
+from kafka import KafkaConsumer
+import json
+import base64
 
 def get_image_paths(directory, valid_extensions=(".jpg", ".jpeg", ".png", ".bmp", ".gif")):
     image_paths = []
@@ -266,4 +269,40 @@ def add_person_to_chromadb(collection=None, ids=None, face_image=None, identity_
             metadatas=metadatas,
             documents=documents
         )
+
+def process_video_stream(topic, bootstrap_servers='localhost:9092'):
+    consumer = KafkaConsumer(
+        topic,
+        bootstrap_servers=bootstrap_servers,
+        auto_offset_reset='earliest',
+        enable_auto_commit=True,
+        group_id='my-group',
+        value_deserializer=lambda x: json.loads(x.decode('utf-8')))
+
+    collection, _ = load_chroma_database()
+    infer = load_model()
+    detector = MTCNN()
+
+    for message in consumer:
+        data = message.value
+        frame_data = data.get('frame')
+
+        if frame_data:
+            # Decode the base64 string
+            img_bytes = base64.b64decode(frame_data)
             
+            # Convert bytes to numpy array
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            
+            # Decode image
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            if frame is not None:
+                predictions = predict_identity_from_image(
+                    collection=collection,
+                    infer=infer,
+                    detector=detector,
+                    image=frame,
+                    top_k=1
+                )
+                print(f"Predictions: {predictions}")

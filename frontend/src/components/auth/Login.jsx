@@ -31,6 +31,11 @@ const Login = () => {
 
       console.log('Login result:', result);
       if (result || result.success) {
+        const isPolice = result?.account?.roles?.includes('POLICE');
+        if (isPolice) {
+          navigate('/police-dashboard');
+          return;
+        }
         navigate('/dashboard'); 
       } else {
         setError(result?.error || 'Login failed');

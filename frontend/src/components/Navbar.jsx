@@ -5,13 +5,17 @@ import './Navbar.css';
 
 const Navbar = () => {
   const [menu, setMenu] = useState(false);
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, roles } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     navigate('/logout');
   };
+
+  const isPolice = roles.includes('POLICE');
+  const dashboardPath = isPolice ? '/police-dashboard' : '/dashboard';
+  console.log('dashboardPath:', dashboardPath);
 
   return (
     <nav className="navbar">
@@ -36,7 +40,7 @@ const Navbar = () => {
             {isAuthenticated ? (
               <div className="auth-section">
                 <span className="user-welcome">Welcome, {user?.username}</span>
-                <Link to="/dashboard" className="nav-button">Dashboard</Link>
+                <Link to={dashboardPath} className="nav-button">Dashboard</Link>
                 <button onClick={handleLogout} className="nav-button logout-btn">
                   Logout
                 </button>
