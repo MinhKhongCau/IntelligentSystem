@@ -16,12 +16,6 @@ const PoliceDashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Police Dashboard</h1>
-        <div className="user-info">
-          <span>Welcome, {user?.username}!</span>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </div>
       </div>
 
       <div className="dashboard-content">
@@ -67,6 +61,28 @@ const PoliceDashboard = () => {
               className="card-button"
             >
               Open Surveillance
+            </button>
+          </div>
+
+          <div className="dashboard-card">
+            <h3>Manage Accounts</h3>
+            <p>Create and delete user accounts</p>
+            <button 
+              onClick={() => navigate('/manage-accounts')}
+              className="card-button"
+            >
+              Manage Accounts
+            </button>
+          </div>
+
+          <div className="dashboard-card">
+            <h3>Manage Missing Forms</h3>
+            <p>Create, accept, and reject missing person forms</p>
+            <button 
+              onClick={() => navigate('/manage-missing-forms')}
+              className="card-button"
+            >
+              Manage Forms
             </button>
           </div>
         </div>

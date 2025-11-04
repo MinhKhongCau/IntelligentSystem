@@ -20,12 +20,6 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Dashboard</h1>
-        <div className="user-info">
-          <span>Welcome, {user?.username}!</span>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </div>
       </div>
 
       <div className="dashboard-content">
@@ -46,7 +40,7 @@ const Dashboard = () => {
               <h3>Report Missing Person</h3>
               <p>Submit a new missing person report</p>
               <button 
-                onClick={() => navigate('/Formmissing')}
+                onClick={() => navigate('/formmissing')}
                 className="card-button"
               >
                 Submit Report
@@ -58,7 +52,7 @@ const Dashboard = () => {
               <p>You must be a care partner to submit a report</p>
               <button 
                 className="card-button"
-                disabled
+                onClick={() => navigate('/formmissing')}
               >
                 Submit a report
               </button>
@@ -81,7 +75,7 @@ const Dashboard = () => {
             <h3>Surveillance</h3>
             <p>Access surveillance area</p>
             <button 
-              onClick={() => window.open('http://localhost:8501/', '_blank')}
+              onClick={() => navigate('/missinglocations')}
               className="card-button"
             >
               Open Surveillance

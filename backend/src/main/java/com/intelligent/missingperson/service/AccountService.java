@@ -1,6 +1,8 @@
 package com.intelligent.missingperson.service;
 
 import com.intelligent.missingperson.entity.Account;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.intelligent.missingperson.repository.AccountRepository;
 import com.intelligent.missingperson.until.Roles;
 
@@ -38,6 +40,10 @@ public class AccountService {
 
     @Autowired 
     private VolunteerService volunteerService;
+
+    public Page<Account> findAll(Pageable pageable) {
+        return accountRepository.findAll(pageable);
+    }
 
     public List<Account> findAll() {
         return accountRepository.findAll();

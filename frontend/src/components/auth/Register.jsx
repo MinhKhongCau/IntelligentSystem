@@ -70,7 +70,7 @@ export default function Register() {
   }
 
   return (
-    <div className="register-wrap">
+    <div className="register-wrap p-8">
       <form className="register-form" onSubmit={onSubmit}>
         <h2>Create account</h2>
 

@@ -22,6 +22,8 @@ import {
 import AddMissingArea from './components/missing form/AddmissingArea';
 import RegisterCarePartner from './components/role/carePartner/RegisterCarePartner';
 import PoliceDashboard from './components/role/police/PoliceDashboard';
+import ManageAccounts from './components/role/police/ManageAccounts';
+import ManageMissingForms from './components/role/police/ManageMissingForms';
 function App() {
   return (
     <AuthProvider>
@@ -66,6 +68,16 @@ function App() {
             <Route path="/police-dashboard" element={
               <ProtectedRoute>
                 <PoliceDashboard/>
+              </ProtectedRoute>
+            } />
+            <Route path="/manage-accounts" element={
+              <ProtectedRoute>
+                <ManageAccounts/>
+              </ProtectedRoute>
+            } />
+            <Route path="/manage-missing-forms" element={
+              <ProtectedRoute>
+                <ManageMissingForms/>
               </ProtectedRoute>
             } />
           </Routes>

@@ -8,5 +8,7 @@ import com.intelligent.missingperson.entity.Police;
 @Repository
 public interface PoliceRepository extends JpaRepository<Police, Integer> {
 
+    boolean existsById(Integer id);
+
     
 }
