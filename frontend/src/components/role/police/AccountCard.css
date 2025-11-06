@@ -1,0 +1,72 @@
+.account-card {
+  background-color: white;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.5rem;
+  max-width: 24rem;
+}
+
+.account-card-header {
+  display: flex;
+  align-items: center;
+}
+
+.account-card-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+}
+
+.account-card-info {
+  margin-left: 1rem;
+}
+
+.account-card-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.account-card-email {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.account-card-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btn {
+  color: white;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+}
+
+.btn-blue {
+  background-color: #4299e1;
+}
+
+.btn-blue:hover {
+  background-color: #2b6cb0;
+}
+
+.btn-red {
+  background-color: #f56565;
+}
+
+.btn-red:hover {
+  background-color: #c53030;
+}
+
+.btn-green {
+  background-color: #48bb78;
+}
+
+.btn-green:hover {
+  background-color: #2f855a;
+}

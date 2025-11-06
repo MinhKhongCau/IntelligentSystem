@@ -24,6 +24,7 @@ import RegisterCarePartner from './components/role/carePartner/RegisterCarePartn
 import PoliceDashboard from './components/role/police/PoliceDashboard';
 import ManageAccounts from './components/role/police/ManageAccounts';
 import ManageMissingForms from './components/role/police/ManageMissingForms';
+import ManageMissingList from './components/role/police/ManageMissingList';
 function App() {
   return (
     <AuthProvider>
@@ -77,7 +78,7 @@ function App() {
             } />
             <Route path="/manage-missing-forms" element={
               <ProtectedRoute>
-                <ManageMissingForms/>
+                <ManageMissingList/>
               </ProtectedRoute>
             } />
           </Routes>

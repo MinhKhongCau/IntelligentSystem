@@ -1,5 +1,6 @@
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/service/AccountService.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/service/MissingDocumentService.java
+/home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/controller/AccountController.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/Area.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/dto/AreaRequest.java
 /home/minhminh/workspace/IntelligentSystem/backend/src/main/java/com/intelligent/missingperson/entity/Account.java

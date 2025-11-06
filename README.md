@@ -59,8 +59,8 @@ The system uses the following main entities:
 2. **Update database configuration** in `src/main/resources/application.properties`:
    ```properties
    spring.datasource.url=jdbc:sqlserver://isdatabase-sqlserver.cnsyoasy0iws.ap-southeast-2.rds.amazonaws.com:1433;databaseName=IntelligentSystemDB;encrypt=true;trustServerCertificate=true
-   spring.datasource.username=admin
-   spring.datasource.password=JCA7Ih96RM5ZIP7hMZWi
+   spring.datasource.username=*********
+   spring.datasource.password=*********
    ```
 
 3. **Run the application**:

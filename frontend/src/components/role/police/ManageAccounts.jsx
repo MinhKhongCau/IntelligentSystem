@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './ManageAccounts.css';
+import PersonCard from '../../missing_list/PersonCard';
+import AccountCard from './AccountCard';
 
 const ManageAccounts = () => {
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ const ManageAccounts = () => {
   const fetchAccounts = async () => {
     try {
       const response = await axios.get('/api/accounts');
-      setAccounts(response.data.content); // Assuming the backend returns a Page object with content
+      setAccounts(response.data); // Assuming the backend returns a Page object with content
     } catch (error) {
       console.error('Error fetching accounts:', error);
     }
@@ -111,18 +113,7 @@ const ManageAccounts = () => {
         <h2>All Accounts</h2>
         {accounts.length > 0 ? (
           accounts.map((account) => (
-            <div key={account.id} className="account-card">
-              <h3>{account.fullName} ({account.username})</h3>
-              <p>Email: {account.email}</p>
-              <p>Account Type: {account.accountType}</p>
-              <p>Status: {account.accountStatus ? 'Active' : 'Inactive'}</p>
-              <div className="account-actions">
-                {!account.accountStatus && (
-                  <button onClick={() => handleAccept(account.id)}>Accept</button>
-                )}
-                <button onClick={() => handleReject(account.id)}>Reject</button>
-              </div>
-            </div>
+            <AccountCard account={account}/>
           ))
         ) : (
           <p>No accounts found.</p>

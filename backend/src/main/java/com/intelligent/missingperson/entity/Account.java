@@ -16,8 +16,8 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "ACCOUNT", schema = "dbo", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "Username"),
-        @UniqueConstraint(columnNames = "Email")
+        @UniqueConstraint(columnNames = "username"),
+        @UniqueConstraint(columnNames = "email")
 })
 public class Account implements Serializable {
 
@@ -36,7 +36,7 @@ public class Account implements Serializable {
     @Column(name = "email", nullable = false, length = 255)
     private String email;
 
-    @Column(name = "fullName", length = 255)
+    @Column(name = "full_name", length = 255)
     private String fullName;
 
     @Column(name = "birthday")
@@ -46,7 +46,7 @@ public class Account implements Serializable {
     @Column(name = "address", columnDefinition = "nvarchar(max)")
     private String address;
 
-    @Column(name = "Gender")
+    @Column(name = "gender")
     private Boolean gender;
 
     @Column(name = "phone", length = 20)
