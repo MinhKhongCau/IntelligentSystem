@@ -3,7 +3,12 @@ package com.intelligent.missingperson.service;
 import com.intelligent.missingperson.dto.MissingDocumentResponseDTO;
 import com.intelligent.missingperson.dto.AreaDTO;
 import com.intelligent.missingperson.entity.MissingDocument;
+import com.intelligent.missingperson.entity.VolunteerReport;
+import com.intelligent.missingperson.entity.VolunteerSubscription;
 import com.intelligent.missingperson.repository.MissingDocumentRepository;
+import com.intelligent.missingperson.repository.VolunteerReportRepository;
+import com.intelligent.missingperson.repository.VolunteerSubcriptionRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +21,10 @@ import java.util.Optional;
 public class MissingDocumentService {
 
     private final MissingDocumentRepository missingDocumentRepository;
+
+    private final VolunteerReportRepository volunteerReportRepository;
+
+    private final VolunteerSubcriptionRepository volunteerSubcriptionRepository;
 
     public List<MissingDocumentResponseDTO> findAll() {
         return missingDocumentRepository.findAll().stream()
@@ -82,5 +91,15 @@ public class MissingDocumentService {
                 .reporterId(document.getReporter() != null ? document.getReporter().getId() : null) // Get reporter ID
                 .caseStatus(document.getCaseStatus())
                 .build();
+    }
+
+    public VolunteerReport saveVolunteerReport(VolunteerReport volunteerReport) {
+        // TODO Auto-generated method stub
+        return volunteerReportRepository.save(volunteerReport);
+    }
+
+    public VolunteerSubscription saveSubcription(VolunteerSubscription volunteerSubscription) {
+        // TODO Auto-generated method stub
+        return volunteerSubcriptionRepository.save(volunteerSubscription);
     }
 }

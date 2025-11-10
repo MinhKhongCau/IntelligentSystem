@@ -1,11 +1,8 @@
 
-import Missingcard from './components/find_loc/Missingcard';
 import MissingList from './components/find_loc/MissingList';
 // import SearchButton from './components/find_loc/SearchButton';
-import Home from './components/Home/Home';
 import Formmissing from './components/missing form/Formmissing';
 import Navbar from './components/Navbar';
-import PersonCard from "./components/missing_list/PersonCard"
 import Missing_persons from './components/missing_list/Missing_persons';
 import Hero from './components/Hero/Hero';
 import Login from './components/auth/Login';
@@ -23,8 +20,8 @@ import AddMissingArea from './components/missing form/AddmissingArea';
 import RegisterCarePartner from './components/role/carePartner/RegisterCarePartner';
 import PoliceDashboard from './components/role/police/PoliceDashboard';
 import ManageAccounts from './components/role/police/ManageAccounts';
-import ManageMissingForms from './components/role/police/ManageMissingForms';
 import ManageMissingList from './components/role/police/ManageMissingList';
+import ManageReportedDocuments from './components/role/carePartner/ManageReportedDocument';
 function App() {
   return (
     <AuthProvider>
@@ -79,6 +76,11 @@ function App() {
             <Route path="/manage-missing-forms" element={
               <ProtectedRoute>
                 <ManageMissingList/>
+              </ProtectedRoute>
+            } />
+            <Route path="/manage-reported-documents" element={
+              <ProtectedRoute>
+                <ManageReportedDocuments/>
               </ProtectedRoute>
             } />
           </Routes>

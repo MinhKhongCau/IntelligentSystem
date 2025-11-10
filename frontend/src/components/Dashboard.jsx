@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import './Dashboard.css';
 
 const Dashboard = () => {
   const { user, logout, roles } = useAuth();
@@ -17,42 +16,46 @@ const Dashboard = () => {
   console.log('User roles:', roles);
   console.log('Is Care Partner:', isCarePartner);
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Dashboard</h1>
+    <div className="min-h-screen p-5 bg-gradient-to-br from-gray-50 to-blue-200">
+      <div className="flex items-center justify-between pb-10 mb-10 border-b-2 border-gray-200">
+        <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
+        <div className="flex items-center space-x-5">
+          <span className="text-lg font-medium text-gray-700">Welcome, {user ? user.username : 'Guest'}!</span>
+        </div>
       </div>
 
-      <div className="dashboard-content">
-        <div className="dashboard-cards">
-          <div className="dashboard-card">
-            <h3>Missing Persons</h3>
-            <p>Manage and view missing person reports</p>
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-3 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">Missing Persons</h3>
+            <p className="mb-5 text-base leading-relaxed text-gray-600">Manage and view missing person reports</p>
             <button 
               onClick={() => navigate('/Missingpeople')}
-              className="card-button"
+              className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
             >
               View Reports
             </button>
           </div>
 
-          {!isCarePartner ? (
-            <div className="dashboard-card">
-              <h3>Report Missing Person</h3>
-              <p>Submit a new missing person report</p>
+          {isCarePartner ? (
+            <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+              <h3 className="mb-3 text-2xl font-semibold text-gray-800">Report Missing Person</h3>
+              <p className="mb-5 text-base leading-relaxed text-gray-600">Submit a new missing person report</p>
               <button 
                 onClick={() => navigate('/formmissing')}
-                className="card-button"
+                className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
               >
                 Submit Report
               </button>
             </div>
           ) : (
-            <div className="dashboard-card">
-              <h3>Report Missing Person</h3>
-              <p>You must be a care partner to submit a report</p>
+            <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+              <h3 className="mb-3 text-2xl font-semibold text-gray-800">Report Missing Person</h3>
+              <p className="mb-5 text-base leading-relaxed text-gray-600">You must be a care partner to submit a report</p>
               <button 
-                className="card-button"
+                className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-not-allowed bg-gray-400 shadow-none"
                 onClick={() => navigate('/formmissing')}
+                disabled
               >
                 Submit a report
               </button>
@@ -60,46 +63,51 @@ const Dashboard = () => {
             )
           }
           
-          <div className="dashboard-card">
-            <h3>Tracked Locations</h3>
-            <p>View location tracking data</p>
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">Tracked Locations</h3>
+            <p className="mb-5 text-base leading-relaxed text-gray-600">View location tracking data</p>
             <button 
               onClick={() => navigate('/locations')}
-              className="card-button"
+              className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
             >
               View Locations
             </button>
           </div>
 
-          <div className="dashboard-card">
-            <h3>Surveillance</h3>
-            <p>Access surveillance area</p>
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">Surveillance</h3>
+            <p className="mb-5 text-base leading-relaxed text-gray-600">Access surveillance area</p>
             <button 
               onClick={() => navigate('/missinglocations')}
-              className="card-button"
+              className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
             >
               Open Surveillance
             </button>
           </div>
 
-          <div className="dashboard-card">
-            <h3>Register Care Partner</h3>
-            {isCarePartner ? (
+        {isCarePartner ? (
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">Register Care Partner</h3>
               <>
-                <p>You are already registered as a care partner.</p>
-                <button className="card-button card-button-disabled" disabled>
-                  Registered
+                <p className="mb-5 text-base leading-relaxed text-gray-600">You are already registered as a care partner.</p>
+                <button 
+                  onClick={() => navigate('/manage-reported-documents')}
+                  className="w-full px-5 py-3 text-base font-medium text-white rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-none">
+                  Manage Reports
                 </button>
               </>
-            ) : (
+          </div>
+          ) : (
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">Register Care Partner</h3>
               <>
-                <p>Register a new care partner account</p>
-                <button onClick={() => navigate('/register-care-partner')} className="card-button">
+                <p className="mb-5 text-base leading-relaxed text-gray-600">Register a new care partner account</p>
+                <button onClick={() => navigate('/register-care-partner')} className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg">
                   Register
                 </button>
               </>
-            )}
           </div>
+          )}
         </div>
       </div>
     </div>

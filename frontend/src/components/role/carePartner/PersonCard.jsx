@@ -95,7 +95,7 @@ const PersonCard = (props) => {
           <div className="w-100 flex flex-grow flex-col items-end justify-start">
             <div className="flex flex-col space-x-3">
               <button className="flex rounded-md bg-blue-500 py-2 px-4 text-white mb-2 w-60" onClick={() => lookDetail(props.id)}>
-                View Details
+                Update
               </button>
               <button className="flex rounded-md bg-green-500 py-2 px-4 text-white mb-2 w-80" onClick={() => onSubscribe(props.id)}>
                 Subcrible
