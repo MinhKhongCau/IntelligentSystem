@@ -19,15 +19,23 @@ services:
   backend-app:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: springboot-container
     ports:
       - "8080:8080"
+      - "5005:5005"  # Debug port
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/pom.xml:/app/pom.xml
+      - ./uploads:/app/uploads 
+      - maven-repo:/root/.m2
     environment:
       # Kết nối đến service database bằng tên service 'sql-server'
       SPRING_DATASOURCE_URL: "jdbc:sqlserver://sql-server:1433;databaseName=IntelligentSystemDB;encrypt=false;"
       SPRING_DATASOURCE_USERNAME: "sa"
-      SPRING_DATASOURCE_PASSWORD: "MinhMinh@1234" 
+      SPRING_DATASOURCE_PASSWORD: "MinhMinh@1234"
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+      SPRING_DEVTOOLS_LIVERELOAD_ENABLED: "true"
     depends_on:
       - sql-server 
   # 3. Service cho React (Frontend)
@@ -48,3 +56,4 @@ services:
     
 volumes:
   sql-data:
+  maven-repo:

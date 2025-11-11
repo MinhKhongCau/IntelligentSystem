@@ -274,8 +274,7 @@ public class MissingDocumentController {
     )
     public ResponseEntity<?> subscribeMissingDocument(
             @RequestParam("missing_document_id") Integer missingDocumentId,
-            @RequestParam("volunteer_id") Integer volunteerId,
-            BindingResult bindingResult
+            @RequestParam("volunteer_id") Integer volunteerId
     ) {
         // This method can reuse the addPersonFromForm logic
         if (missingDocumentId == null) {

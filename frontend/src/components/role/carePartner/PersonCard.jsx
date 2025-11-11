@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useState } from 'react';
-import MissingDocumentDetailPopup from './MissingDocumentDetailPopup';
+import MissingDocumentEditPopup from './MissingDocumentDetailPopup';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -15,17 +15,49 @@ const PersonCard = (props) => {
     setShowPopup(false);
   };
 
+  const handleSave = async (updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE}/api/missing-documents/${props.id}`, updatedData);
+      
+      if (response.status === 200) {
+        alert('Successfully updated missing person information.');
+        // Optionally refresh the data or update parent component
+        if (props.onUpdate) {
+          props.onUpdate(response.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating missing person:', error);
+      alert('An error occurred while updating the information.');
+    }
+  };
+
   const onSubscribe = async (missingDocumentId) => {
     try {
-      const volunteerId = localStorage.getItem('volunteerId');
-      if (!volunteerId) {
-        alert('Volunteer ID not found. Please log in as a volunteer.');
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('User not found. Please log in.');
         return;
       }
 
-      const response = await axios.post(`${API_BASE}/api/missing-documents/subscribe`, {
-        missingDocumentId: missingDocumentId,
-        volunteerId: volunteerId
+      const user = JSON.parse(userStr);
+      const volunteerId = user?.id;
+      console.log('volunteer id: ', volunteerId)
+
+      if (!volunteerId) {
+        alert(user, 'Volunteer ID not found. Please log in as a volunteer.')
+        return;
+      }
+
+      // Create FormData to match backend's MULTIPART_FORM_DATA expectation
+      const formData = new FormData();
+      formData.append('missing_document_id', missingDocumentId);
+      formData.append('volunteer_id', volunteerId);
+
+      const response = await axios.post(`${API_BASE}/api/missing-documents/subcribe`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       if (response.status === 201) {
@@ -35,7 +67,7 @@ const PersonCard = (props) => {
       }
     } catch (error) {
       console.error('Error subscribing to missing person updates:', error);
-      alert('An error occurred while subscribing.');
+      alert(error.response?.data || 'An error occurred while subscribing.');
     }
   };
 
@@ -94,17 +126,17 @@ const PersonCard = (props) => {
 
           <div className="w-100 flex flex-grow flex-col items-end justify-start">
             <div className="flex flex-col space-x-3">
-              <button className="flex rounded-md bg-blue-500 py-2 px-4 text-white mb-2 w-60" onClick={() => lookDetail(props.id)}>
+              <button className="flex rounded-md bg-blue-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => lookDetail(props.id)}>
                 Update
               </button>
-              <button className="flex rounded-md bg-green-500 py-2 px-4 text-white mb-2 w-80" onClick={() => onSubscribe(props.id)}>
-                Subcrible
+              <button className="flex rounded-md bg-green-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => onSubscribe(props.id)}>
+                Subscribe
               </button>
             </div>
           </div>
         </div>
       </div>
-      {showPopup && <MissingDocumentDetailPopup {...props} onClose={onClosePopup} />}
+      {showPopup && <MissingDocumentEditPopup initialData={props} onClose={onClosePopup} onSave={handleSave} />}
     </div>
   );
 };

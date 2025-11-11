@@ -34,6 +34,10 @@ const ManageReportedDocuments = () => {
     setCases((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const handleUpdated = (updatedCase) => {
+    setCases((prev) => prev.map((c) => c.id === updatedCase.id ? updatedCase : c));
+  };
+
   return (
     // Replaced .personwhole and inline style
     <div className="min-h-screen bg-gray-100">
@@ -59,12 +63,24 @@ const ManageReportedDocuments = () => {
               <PersonCard
                 key={element.id}
                 id={element.id}
-                name={element.fullName} 
+                name={element.name} 
                 image={imageUrl}
+                birthday={element.birthday}
+                gender={element.gender}
+                identityCardNumber={element.identityCardNumber}
+                height={element.height}
+                weight={element.weight}
+                identifyingCharacteristic={element.identifyingCharacteristic}
+                lastKnownOutfit={element.lastKnownOutfit}
+                medicalConditions={element.medicalConditions}
                 missingTime={element.missingTime}
+                reportDate={element.reportDate}
+                reporterRelationship={element.reporterRelationship}
                 caseStatus={element.caseStatus}
-                missingArea={element.missingArea} 
+                missingArea={element.missingArea}
+                reporter={element.reporter}
                 onDelete={handleDeleted}
+                onUpdate={handleUpdated}
               />
             );
           })}

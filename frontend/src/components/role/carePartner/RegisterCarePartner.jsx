@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import './RegisterCarePartner.css'; // <--- 1. IMPORT TỆP CSS
 
 const RegisterCarePartner = () => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -26,15 +25,13 @@ const RegisterCarePartner = () => {
         e.preventDefault();
         setError("");
         setSuccess("");
-        // console.log(formData)
 
         try {
             const response = await axios.post("/api/care-partners/register", formData);
             if (response.status === 201) {
                 setSuccess("Successfully registered as a Care Partner!");
-                // Optionally redirect after a delay
                 setTimeout(() => {
-                    navigate("/dashboard"); // or any other appropriate page
+                    navigate("/dashboard");
                 }, 2000);
             }
         } catch (err) {
@@ -44,34 +41,73 @@ const RegisterCarePartner = () => {
     };
 
     return (
-        // 2. THÊM LỚP BỌC BÊN NGOÀI
-        <div className="register-partner-wrapper"> 
-            {/* THÊM LỚP CSS TÙY CHỈNH VÀO CONTAINER CÓ SẴN */}
-            <div className="container mt-5 register-partner-container"> 
-                <h2>Register as a Care Partner</h2>
-                <form onSubmit={handleSubmit}>
-                    {error && <div className="p-4 mb-4 text-center bg-red-100 border border-red-400 text-red-700 rounded-lg shadow dark:bg-red-lert alert-danger">{error}</div>}
-                    {success && <div className="alert alert-success">{success}</div>}
-                    <div className="mb-3 flex justify-between">
-                        <label htmlFor="partnerType" className="form-label">Position / Role</label>
+        <div className="flex justify-center items-center min-h-[90vh] bg-gray-50 px-4 py-8">
+            <div className="bg-white w-full max-w-2xl rounded-xl shadow-lg border border-gray-200 p-10">
+                <h2 className="text-3xl font-semibold text-gray-800 text-center mb-8">
+                    Register as a Care Partner
+                </h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="p-4 text-center bg-red-100 border border-red-400 text-red-700 rounded-lg shadow">
+                            {error}
+                        </div>
+                    )}
+                    
+                    {success && (
+                        <div className="p-4 text-center bg-green-100 border border-green-400 text-green-700 rounded-lg shadow">
+                            {success}
+                        </div>
+                    )}
+                    
+                    <div>
+                        <label 
+                            htmlFor="partnerType" 
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                            Position / Role
+                        </label>
                         <input
                             type="text"
-                            className="form-control"
                             id="partnerType"
                             name="partnerType"
                             value={formData.partnerType}
                             onChange={handleChange}
                             required
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            placeholder="Enter your position or role"
                         />
                     </div>
-                    <div className="mb-3 flex justify-between">
-                        <label htmlFor="organizationName" className="form-label">Organization Name</label>
-                        <input type="text" className="form-control" id="organizationName" name="organizationName" value={formData.organizationName} onChange={handleChange} required />
+                    
+                    <div>
+                        <label 
+                            htmlFor="organizationName" 
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                            Organization Name
+                        </label>
+                        <input
+                            type="text"
+                            id="organizationName"
+                            name="organizationName"
+                            value={formData.organizationName}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            placeholder="Enter your organization name"
+                        />
                     </div>
-                    <button type="submit" className="btn btn-primary">Register</button>
+                    
+                    <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-purple-500 to-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-0.5 transform transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    >
+                        Register
+                    </button>
                 </form>
             </div>
         </div>
     );
 }
+
 export default RegisterCarePartner;

@@ -44,12 +44,76 @@ The system uses the following main entities:
 ## Setup Instructions
 
 ### Prerequisites
-- Java 17 or higher
-- Node.js 16 or higher
-- SQL Server database access
-- Maven 3.6 or higher
+- Docker and Docker Compose
+- Java 17 or higher (for local development)
+- Node.js 16 or higher (for local development)
+- Maven 3.6 or higher (for local development)
 
-### Backend Setup
+### Quick Start with Docker (Recommended)
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd <project-directory>
+   ```
+
+2. **Start all services with hot reload**:
+   ```bash
+   docker compose -f docker-compose.dev.yml up --build
+   ```
+
+   This will start:
+   - SQL Server database on port `1433`
+   - Spring Boot backend on port `8080` (with hot reload)
+   - React frontend on port `3000` (with hot reload)
+
+3. **Access the application**:
+   - Frontend: `http://localhost:3000`
+   - Backend API: `http://localhost:8080`
+   - Database: `localhost:1433`
+
+4. **Stop all services**:
+   ```bash
+   docker compose -f docker-compose.dev.yml down
+   ```
+
+### Hot Reload Development
+
+The development environment supports automatic reload when you save changes:
+
+#### Backend (Spring Boot)
+- Edit any Java file in `backend/src/`
+- Press **Ctrl+S** (or Cmd+S on Mac)
+- Wait 1-2 seconds - the application automatically restarts
+- Changes are live!
+
+**How it works:**
+- Spring Boot DevTools monitors classpath changes
+- Docker volumes sync your source code
+- Application context restarts (fast, ~1-3 seconds)
+
+#### Frontend (React)
+- Edit any file in `frontend/src/`
+- Press **Ctrl+S**
+- Browser automatically refreshes with changes
+- No manual reload needed!
+
+### View Logs
+
+```bash
+# All services
+docker compose -f docker-compose.dev.yml logs -f
+
+# Backend only
+docker compose -f docker-compose.dev.yml logs -f backend-app
+
+# Frontend only
+docker compose -f docker-compose.dev.yml logs -f frontend-app
+```
+
+### Local Development (Without Docker)
+
+#### Backend Setup
 
 1. **Navigate to backend directory**:
    ```bash
@@ -58,9 +122,9 @@ The system uses the following main entities:
 
 2. **Update database configuration** in `src/main/resources/application.properties`:
    ```properties
-   spring.datasource.url=jdbc:sqlserver://isdatabase-sqlserver.cnsyoasy0iws.ap-southeast-2.rds.amazonaws.com:1433;databaseName=IntelligentSystemDB;encrypt=true;trustServerCertificate=true
-   spring.datasource.username=*********
-   spring.datasource.password=*********
+   spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=IntelligentSystemDB;encrypt=false;
+   spring.datasource.username=sa
+   spring.datasource.password=MinhMinh@1234
    ```
 
 3. **Run the application**:
@@ -70,7 +134,7 @@ The system uses the following main entities:
 
    The backend will be available at `http://localhost:8080`
 
-### Frontend Setup
+#### Frontend Setup
 
 1. **Navigate to frontend directory**:
    ```bash
@@ -87,7 +151,17 @@ The system uses the following main entities:
    npm run dev
    ```
 
-   The frontend will be available at `http://localhost:5173`
+   The frontend will be available at `http://localhost:3000`
+
+### Production Build
+
+For production deployment without hot reload:
+
+```bash
+docker compose up --build
+```
+
+This creates optimized builds without development tools.
 
 ## API Endpoints
 
