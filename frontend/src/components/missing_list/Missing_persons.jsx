@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import missingimg from './missingguy.png';
-import './Missing_persons.css';
 import PersonCard from './PersonCard';
-import axios from 'axios'; // <-- Nên dùng axios để nhất quán
+import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -16,7 +15,6 @@ const Missing_persons = () => {
     setError('');
     try {
       const res = await axios.get(`${API_BASE}/api/missing-documents`);
-      
       setCases(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -35,37 +33,50 @@ const Missing_persons = () => {
   };
 
   return (
-    <div className="personwhole" style={{ backgroundColor: '#f1f1f1' }}>
-      <div className="personheader">
-        <div className="subheadingmissing">
-          <div className="text-4xl">Missing People</div>
-          <img src={missingimg} alt="" width="70" />
+    <div className="min-h-screen bg-gray-100">
+      <div className="flex justify-center w-screen overflow-x-hidden">
+        <div className="flex items-center justify-center gap-4 mt-24 mb-20">
+          <div className="text-4xl font-bold font-sans">Missing People</div>
+          <img src={missingimg} alt="" className="w-16 h-16" />
         </div>
       </div>
 
-      {loading && <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>}
-      {error && <div className="error" style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>{error}</div>}
+      {loading && <div className="text-center p-8 text-lg">Loading...</div>}
+      {error && <div className="text-center p-8 text-red-600 font-medium">{error}</div>}
 
-      <div className="contentlist">
-        {cases.map((element) => {
-          // Handle URL Image
-          const imageUrl = element.facePictureUrl?.startsWith('http') 
-            ? element.facePictureUrl 
-            : `${API_BASE}${element.facePictureUrl}`;
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="gap-6 px-4 md:px-0">
+          {cases.map((element) => {
+            const imageUrl = element.facePictureUrl?.startsWith('http') 
+              ? element.facePictureUrl 
+              : `${API_BASE}${element.facePictureUrl}`;
 
-          return (
-            <PersonCard
-              key={element.id}
-              id={element.id}
-              name={element.fullName} 
-              image={imageUrl}
-              missingTime={element.missingTime}
-              caseStatus={element.caseStatus}
-              missingArea={element.missingArea} 
-              onDelete={handleDeleted}
-            />
-          );
-        })}
+            return (
+              <PersonCard
+                key={element.id}
+                id={element.id}
+                name={element.name}
+                image={imageUrl}
+                birthday={element.birthday}
+                gender={element.gender}
+                identityCardNumber={element.identityCardNumber}
+                height={element.height}
+                weight={element.weight}
+                identifyingCharacteristic={element.identifyingCharacteristic}
+                lastKnownOutfit={element.lastKnownOutfit}
+                medicalConditions={element.medicalConditions}
+                facePictureUrl={element.facePictureUrl}
+                missingTime={element.missingTime}
+                reportDate={element.reportDate}
+                reporterRelationship={element.reporterRelationship}
+                caseStatus={element.caseStatus}
+                missingArea={element.missingArea}
+                reporterId={element.reporterId}
+                onDelete={handleDeleted}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );

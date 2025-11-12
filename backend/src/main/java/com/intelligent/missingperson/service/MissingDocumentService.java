@@ -2,16 +2,21 @@ package com.intelligent.missingperson.service;
 
 import com.intelligent.missingperson.dto.MissingDocumentResponseDTO;
 import com.intelligent.missingperson.dto.AreaDTO;
+import com.intelligent.missingperson.dto.MissingDocumentRequest;
+import com.intelligent.missingperson.entity.Area;
+import com.intelligent.missingperson.entity.CarePartner;
 import com.intelligent.missingperson.entity.MissingDocument;
 import com.intelligent.missingperson.entity.VolunteerReport;
 import com.intelligent.missingperson.entity.VolunteerSubscription;
 import com.intelligent.missingperson.repository.MissingDocumentRepository;
 import com.intelligent.missingperson.repository.VolunteerReportRepository;
 import com.intelligent.missingperson.repository.VolunteerSubcriptionRepository;
+import com.intelligent.missingperson.until.CaseStatus;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,12 +41,51 @@ public class MissingDocumentService {
         return missingDocumentRepository.findById(id);
     }
 
-    public MissingDocument save(MissingDocument document) {
+    public Optional<MissingDocumentResponseDTO> findByIdAsDTO(Integer id) {
+        return missingDocumentRepository.findById(id)
+                .map(this::mapToMissingDocumentResponseDTO);
+    }
+
+    public MissingDocument save (MissingDocument document) {
         return missingDocumentRepository.save(document);
     }
 
+    public MissingDocument save(MissingDocumentRequest request, Area area, CarePartner reporter) {
+        MissingDocument missingDocument = MissingDocument.builder()
+                .fullName(request.getName())
+                .birthday(request.getBirthday())
+                .gender(request.getGender())
+                .identityCardNumber(request.getIdentityCardNumber())
+                .height(request.getHeight())
+                .weight(request.getWeight())
+                .identifyingCharacteristic(request.getIdentifyingCharacteristic())
+                .lastKnownOutfit(request.getLastKnownOutfit())
+                .medicalConditions(request.getMedicalConditions())
+                .facePictureUrl(request.getFacePictureUrl())
+                .missingTime(request.getMissingTime())
+                .reportDate(request.getReportDate() == null ? LocalDateTime.now() : request.getReportDate())
+                .reporterRelationship(request.getReporterRelationship())
+                .missingArea(area)
+                .reporter(reporter)
+                .caseStatus(CaseStatus.Missing.name())
+                .build();
+        return missingDocumentRepository.save(missingDocument);
+    }
+
     public void deleteById(Integer id) {
-        missingDocumentRepository.deleteById(id);
+        if (id == null) {
+            throw new IllegalArgumentException("ID must not be null for deletion.");
+        }
+
+        Optional<MissingDocument> missingDocumentOpt = missingDocumentRepository.findById(id);
+
+        if (missingDocumentOpt.isPresent()) {
+            MissingDocument missingDocument = missingDocumentOpt.get();
+            missingDocument.setCaseStatus(CaseStatus.Verifying.name());
+            missingDocumentRepository.save(missingDocument);
+        } else {
+            System.out.println("Warning: MissingDocument with ID " + id + " not found.");
+        }
     }
 
     public boolean existsById(Integer id) {
@@ -94,12 +138,69 @@ public class MissingDocumentService {
     }
 
     public VolunteerReport saveVolunteerReport(VolunteerReport volunteerReport) {
-        // TODO Auto-generated method stub
         return volunteerReportRepository.save(volunteerReport);
     }
 
     public VolunteerSubscription saveSubcription(VolunteerSubscription volunteerSubscription) {
-        // TODO Auto-generated method stub
         return volunteerSubcriptionRepository.save(volunteerSubscription);
     }
+
+    public List<MissingDocumentResponseDTO> findSubscribedDocumentsByVolunteerId(Integer volunteerId) {
+        return volunteerSubcriptionRepository.findByVolunteerIdAndIsActiveTrue(volunteerId)
+                .stream()
+                .map(subscription -> mapToMissingDocumentResponseDTO(subscription.getMissingDocument()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    public boolean unsubscribeVolunteer(Integer missingDocumentId, Integer volunteerId) {
+        Optional<VolunteerSubscription> subscriptionOpt = volunteerSubcriptionRepository
+                .findByMissingDocumentIdAndVolunteerIdAndIsActiveTrue(missingDocumentId, volunteerId);
+        
+        if (subscriptionOpt.isPresent()) {
+            VolunteerSubscription subscription = subscriptionOpt.get();
+            subscription.setActive(false);
+            volunteerSubcriptionRepository.save(subscription);
+            return true;
+        }
+        return false;
+    }
+
+    public void updateDocumentFields(MissingDocument document, MissingDocumentRequest request) {
+        document.setFullName(request.getName());
+        document.setBirthday(request.getBirthday());
+        document.setGender(request.getGender());
+        document.setIdentityCardNumber(request.getIdentityCardNumber());
+        document.setHeight(request.getHeight());
+        document.setWeight(request.getWeight());
+        document.setIdentifyingCharacteristic(request.getIdentifyingCharacteristic());
+        document.setLastKnownOutfit(request.getLastKnownOutfit());
+        document.setMedicalConditions(request.getMedicalConditions());
+        document.setFacePictureUrl(request.getFacePictureUrl());
+        document.setMissingTime(request.getMissingTime());
+        document.setUpdateDate(LocalDateTime.now());
+        if (request.getReporterRelationship() != null) {
+            document.setReporterRelationship(request.getReporterRelationship());
+        }
+    }
+
+	public MissingDocumentResponseDTO convertToDTO(MissingDocument updatedDocument) {
+		return MissingDocumentResponseDTO.builder()
+            .id(updatedDocument.getId())
+            .name(updatedDocument.getFullName())
+            .birthday(updatedDocument.getBirthday())
+            .gender(updatedDocument.getGender())
+            .identityCardNumber(updatedDocument.getIdentityCardNumber())
+            .height(updatedDocument.getHeight())
+            .weight(updatedDocument.getWeight())
+            .identifyingCharacteristic(updatedDocument.getIdentifyingCharacteristic())
+            .lastKnownOutfit(updatedDocument.getLastKnownOutfit())
+            .medicalConditions(updatedDocument.getMedicalConditions())
+            .facePictureUrl(updatedDocument.getFacePictureUrl())
+            .missingTime(updatedDocument.getMissingTime())
+            .reportDate(updatedDocument.getReportDate())
+            .reporterRelationship(updatedDocument.getReporterRelationship())
+            .caseStatus(updatedDocument.getCaseStatus())
+            .build();
+            
+	}
 }

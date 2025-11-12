@@ -44,6 +44,9 @@ public class AuthController {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private com.intelligent.missingperson.service.VolunteerService volunteerService;
+
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Optional<Account> optAccount = accountService.findByUsername(loginRequest.getUsername());
@@ -109,6 +112,16 @@ public class AuthController {
                 .build();
 
         Account saved = accountService.save(account);
+        
+        // Automatically create a Volunteer record for the new account
+        com.intelligent.missingperson.entity.Volunteer volunteer = com.intelligent.missingperson.entity.Volunteer.builder()
+                .account(saved)
+                .volunteerStatus(true)
+                .dateJoined(java.time.LocalDate.now())
+                .rating(3.0)
+                .build();
+        volunteerService.save(volunteer);
+        
         saved.setPassword(null);
 
         Map<String, Object> resp = new HashMap<>();

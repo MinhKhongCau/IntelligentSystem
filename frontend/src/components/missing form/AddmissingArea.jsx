@@ -16,12 +16,36 @@ L.Icon.Default.mergeOptions({
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-// A component to handle map clicks
-function MapClickHandler({ setPosition }) {
+// A component to handle map clicks with reverse geocoding
+function MapClickHandler({ setPosition, setForm }) {
   const map = useMapEvents({
-    click(e) {
+    async click(e) {
       setPosition(e.latlng); // Set the state with new coordinates
       map.flyTo(e.latlng, map.getZoom()); // Move map to clicked spot
+      
+      // Reverse geocoding to get address information
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.address) {
+          const address = data.address;
+          
+          // Auto-fill form fields based on the geocoding result
+          setForm(prev => ({
+            ...prev,
+            commune: address.suburb || address.neighbourhood || address.hamlet || prev.commune,
+            district: address.city_district || address.county || address.state_district || prev.district || address.city,
+            province: address.state || address.province || address.region || prev.province || address.military || data.name,
+            country: address.country || prev.country
+          }));
+        }
+      } catch (error) {
+        console.error('Error with reverse geocoding:', error);
+        // Continue without auto-filling if geocoding fails
+      }
     },
   });
   return null;
@@ -163,7 +187,7 @@ const AddMissingArea = ({ onAreaAdded, onClose }) => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
 
-          <MapClickHandler setPosition={setPosition} />
+          <MapClickHandler setPosition={setPosition} setForm={setForm} />
 
           {position && (
             <Marker position={position}>

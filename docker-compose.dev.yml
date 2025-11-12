@@ -27,7 +27,7 @@ services:
     volumes:
       - ./backend/src:/app/src
       - ./backend/pom.xml:/app/pom.xml
-      - ./uploads:/app/uploads 
+      - ./backend/uploads:/app/uploads 
       - maven-repo:/root/.m2
     environment:
       # Kết nối đến service database bằng tên service 'sql-server'

@@ -2,7 +2,6 @@ package com.intelligent.missingperson.controller;
 
 import com.intelligent.missingperson.dto.MissingDocumentRequest;
 import com.intelligent.missingperson.dto.MissingDocumentResponseDTO;
-import com.intelligent.missingperson.dto.ReportMissingDTO;
 import com.intelligent.missingperson.entity.*;
 import com.intelligent.missingperson.service.AreaService;
 import com.intelligent.missingperson.service.CarePartnerService;
@@ -69,9 +68,10 @@ public class MissingDocumentController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getMissingDocumentById(@PathVariable Integer id) {
         try {
-            Optional<MissingDocument> document = missingDocumentService.findById(id);
+            Optional<MissingDocumentResponseDTO> document = missingDocumentService.findByIdAsDTO(id);
             if (document.isEmpty()) {
-                return ResponseEntity.internalServerError().body(String.format("Document not found with id: %d", id));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(String.format("Document not found with id: %d", id));
             }
             return ResponseEntity.ok(document.get());
         } catch (Exception e) {
@@ -101,26 +101,7 @@ public class MissingDocumentController {
                         .body("Reporter not found with id: " + request.getReporterId());
             }
 
-            MissingDocument missingDocument = MissingDocument.builder()
-                .fullName(request.getName())
-                .birthday(request.getBirthday())
-                .gender(request.getGender())
-                .identityCardNumber(request.getIdentityCardNumber())
-                .height(request.getHeight())
-                .weight(request.getWeight())
-                .identifyingCharacteristic(request.getIdentifyingCharacteristic())
-                .lastKnownOutfit(request.getLastKnownOutfit())
-                .medicalConditions(request.getMedicalConditions())
-                .facePictureUrl(request.getFacePictureUrl())
-                .missingTime(request.getMissingTime())
-                .reportDate(request.getReportDate() == null ? LocalDateTime.now() : request.getReportDate())
-                .reporterRelationship(request.getReporterRelationship())
-                .missingArea(areaOpt.get())
-                .reporter(reporterOpt.get())
-                .caseStatus("Missing")
-                .build();
-
-            MissingDocument savedDocument = missingDocumentService.save(missingDocument);
+            MissingDocument savedDocument = missingDocumentService.save(request, areaOpt.get(), reporterOpt.get());
             return ResponseEntity.ok("Document created successfully" + savedDocument);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
@@ -144,7 +125,7 @@ public class MissingDocumentController {
             }
 
             MissingDocument document = existingDoc.get();
-            updateDocumentFields(document, request);
+            missingDocumentService.updateDocumentFields(document, request);
 
             if (request.getMissingAreaId() != null) {
                 Optional<Area> area = areaService.findById(request.getMissingAreaId());
@@ -156,7 +137,8 @@ public class MissingDocumentController {
             }
 
             MissingDocument updatedDocument = missingDocumentService.save(document);
-            return ResponseEntity.ok("Document updated successfully" + updatedDocument);
+            MissingDocumentResponseDTO missingDocumentResponseDTO = missingDocumentService.convertToDTO(updatedDocument);
+            return ResponseEntity.ok(missingDocumentResponseDTO);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error updating document: " + e.getMessage());
@@ -175,24 +157,6 @@ public class MissingDocumentController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error deleting document: " + e.getMessage());
-        }
-    }
-
-    private void updateDocumentFields(MissingDocument document, MissingDocumentRequest request) {
-        document.setFullName(request.getName());
-        document.setBirthday(request.getBirthday());
-        document.setGender(request.getGender());
-        document.setIdentityCardNumber(request.getIdentityCardNumber());
-        document.setHeight(request.getHeight());
-        document.setWeight(request.getWeight());
-        document.setIdentifyingCharacteristic(request.getIdentifyingCharacteristic());
-        document.setLastKnownOutfit(request.getLastKnownOutfit());
-        document.setMedicalConditions(request.getMedicalConditions());
-        document.setFacePictureUrl(request.getFacePictureUrl());
-        document.setMissingTime(request.getMissingTime());
-        document.setUpdateDate(LocalDateTime.now());
-        if (request.getReporterRelationship() != null) {
-            document.setReporterRelationship(request.getReporterRelationship());
         }
     }
 
@@ -276,19 +240,27 @@ public class MissingDocumentController {
             @RequestParam("missing_document_id") Integer missingDocumentId,
             @RequestParam("volunteer_id") Integer volunteerId
     ) {
-        // This method can reuse the addPersonFromForm logic
         if (missingDocumentId == null) {
-            return ResponseEntity.badRequest().body("MissingDocument ID is required in the report.");
+            return ResponseEntity.badRequest().body("MissingDocument ID is required.");
         }
         if (volunteerId == null) {
-            return ResponseEntity.badRequest().body("Volunteer ID is required in the report.");
+            return ResponseEntity.badRequest().body("Volunteer ID is required.");
         }
+        
         Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(missingDocumentId);
         Optional<Volunteer> volunteerOpt = volunteerService.findById(volunteerId);
-        if (missingDocOpt.isEmpty() || volunteerOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Something not found with id: " + volunteerId);
+        
+        if (missingDocOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Missing document not found with id: " + missingDocumentId);
         }
+        if (volunteerOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Volunteer not found with id: " + volunteerId);
+        }
+        
+        VolunteerSubscriptionId subscriptionId = new VolunteerSubscriptionId(missingDocumentId, volunteerId);
+        
         VolunteerSubscription volunteerSubscription = VolunteerSubscription.builder()
+                .id(subscriptionId)
                 .missingDocument(missingDocOpt.get())
                 .volunteer(volunteerOpt.get())
                 .subscribedDate(LocalDateTime.now())
@@ -299,37 +271,82 @@ public class MissingDocumentController {
         return ResponseEntity.status(201).body("Volunteer subscription successfully.");
     }
 
+    @GetMapping("/subscriptions/{volunteerId}")
+    public ResponseEntity<?> getSubscribedDocuments(@PathVariable Integer volunteerId) {
+        try {
+            Optional<Volunteer> volunteerOpt = volunteerService.findById(volunteerId);
+            if (volunteerOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("Volunteer not found with id: " + volunteerId);
+            }
+            
+            List<MissingDocumentResponseDTO> subscribedDocuments = missingDocumentService.findSubscribedDocumentsByVolunteerId(volunteerId);
+            return ResponseEntity.ok(subscribedDocuments);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error retrieving subscribed documents: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/subscriptions/{missingDocumentId}/{volunteerId}")
+    public ResponseEntity<?> unsubscribeFromDocument(
+            @PathVariable Integer missingDocumentId,
+            @PathVariable Integer volunteerId
+    ) {
+        try {
+            boolean success = missingDocumentService.unsubscribeVolunteer(missingDocumentId, volunteerId);
+            if (success) {
+                return ResponseEntity.ok("Successfully unsubscribed from document.");
+            } else {
+                return ResponseEntity.badRequest().body("Subscription not found or already inactive.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error unsubscribing: " + e.getMessage());
+        }
+    }
+
     @PostMapping(
         path = "/submit-missing-person",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<?> submitMissingPerson(
-            @ModelAttribute @Valid ReportMissingDTO request,
-            BindingResult bindingResult,
-            @RequestParam(value = "sighting_picture", required = false) MultipartFile image
+            @RequestParam("missingDocumentId") Integer missingDocumentId,
+            @RequestParam("volunteerId") Integer volunteerId,
+            @RequestParam("description") String description,
+            @RequestParam("sightingPicture") String sightingPicture,
+            @RequestParam("sightingAreaId") Integer sightingAreaId
     ) {
-        // This method can reuse the addPersonFromForm logic
-        if (bindingResult.hasErrors()) {
-            StringBuilder sb = new StringBuilder();
-            bindingResult.getFieldErrors().forEach(fe -> sb.append(fe.getField()).append(": ").append(fe.getDefaultMessage()).append("; "));
-            return ResponseEntity.badRequest().body("Validation failed: " + sb.toString());
+        if (missingDocumentId == null) {
+            return ResponseEntity.badRequest().body("Missing document ID is required.");
         }
-        if (request.getId() == null) {
-            return ResponseEntity.badRequest().body("MissingDocument ID is required in the report.");
+        if (volunteerId == null) {
+            return ResponseEntity.badRequest().body("Volunteer ID is required.");
         }
-        Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(request.getMissingDocumentId());
-        Optional<Area> areaOpt = areaService.findById(request.getSightingAreaId());
-        Optional<Volunteer> volunteerOpt = volunteerService.findById(request.getVolunteerId());
-        if (missingDocOpt.isEmpty() || areaOpt.isEmpty() || volunteerOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Something not found with id: " + request.getMissingDocumentId());
+        if (description == null || description.isBlank()) {
+            return ResponseEntity.badRequest().body("Description is required.");
         }
+        
+        Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(missingDocumentId);
+        Optional<Area> areaOpt = areaService.findById(sightingAreaId);
+        Optional<Volunteer> volunteerOpt = volunteerService.findById(volunteerId);
+        
+        if (missingDocOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Missing document not found with id: " + missingDocumentId);
+        }
+        if (areaOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Area not found with id: " + sightingAreaId);
+        }
+        if (volunteerOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Volunteer not found with id: " + volunteerId);
+        }
+        
         VolunteerReport volunteerReport = VolunteerReport.builder()
                 .missingDocument(missingDocOpt.get())
                 .volunteer(volunteerOpt.get())
-                .reportTime(request.getReportTime() != null ? request.getReportTime() : LocalDateTime.now())
-                .sightingPicture(request.getSightingPicture())
+                .reportTime(LocalDateTime.now())
+                .sightingPicture(sightingPicture)
                 .sightingArea(areaOpt.get())
-                .description(request.getDescription())
+                .description(description)
                 .build();
         missingDocumentService.saveVolunteerReport(volunteerReport);
         return ResponseEntity.status(201).body("Volunteer report submitted successfully.");

@@ -1,34 +1,40 @@
+import React from 'react';
 import axios from 'axios';
-import React, { useState } from 'react';
-import MissingDocumentEditPopup from './MissingDocumentDetailPopup';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const PersonCard = (props) => {
-  const [showPopup, setShowPopup] = useState(false);
+  const { roles } = useAuth();
+  const isCarePartner = roles && roles.includes('CARE_PARTNER');
+  const navigate = useNavigate();
   
   const lookDetail = async (id) => {
-    setShowPopup(true);
+    navigate(`/manage-reported-documents/${id}`);
   };
 
-  const onClosePopup = () => {
-    setShowPopup(false);
-  };
-
-  const handleSave = async (updatedData) => {
+  const onDelete = async (missingDocumentId) => {
     try {
-      const response = await axios.put(`${API_BASE}/api/missing-documents/${props.id}`, updatedData);
+      // Confirm before deleting
+      const confirmDelete = window.confirm('Are you sure you want to delete this missing person document? This action cannot be undone.');
       
+      if (!confirmDelete) {
+        return;
+      }
+
+      const response = await axios.delete(`${API_BASE}/api/missing-documents/${missingDocumentId}`);
+
       if (response.status === 200) {
-        alert('Successfully updated missing person information.');
-        // Optionally refresh the data or update parent component
-        if (props.onUpdate) {
-          props.onUpdate(response.data);
+        alert('Successfully deleted missing person document.');
+        // Call parent component's onDelete callback to update the list
+        if (props.onDelete) {
+          props.onDelete(missingDocumentId);
         }
       }
     } catch (error) {
-      console.error('Error updating missing person:', error);
-      alert('An error occurred while updating the information.');
+      console.error('Error deleting missing person:', error);
+      alert(error.response?.data || 'An error occurred while deleting the document.');
     }
   };
 
@@ -45,7 +51,7 @@ const PersonCard = (props) => {
       console.log('volunteer id: ', volunteerId)
 
       if (!volunteerId) {
-        alert(user, 'Volunteer ID not found. Please log in as a volunteer.')
+        alert('Volunteer ID not found. Please log in as a volunteer.');
         return;
       }
 
@@ -100,7 +106,7 @@ const PersonCard = (props) => {
                   <img src="https://img.icons8.com/material-outlined/24/000000/calendar-13.png" width="20" alt="" />
                   <span className="font-bold text-black-600 ml-1">{formattedMissingTime}</span>
                 </div>
-                <div className="mt-2 text-sm text-black-400">Missing From</div>
+                <div className="mt-2 text-sm text-gray-500">Missing From</div>
               </div>
 
               {/* Box 2: Case Status */}
@@ -110,7 +116,7 @@ const PersonCard = (props) => {
                   <img src="https://img.icons8.com/ios/50/000000/process.png" width="24" alt="" />
                   <span className="font-bold text-black-600 ml-1">{props.caseStatus}</span>
                 </div>
-                <div className="mt-2 text-sm text-black-400">Status</div>
+                <div className="mt-2 text-sm text-gray-500">Status</div>
               </div>
 
               {/* Box 3: Area */}
@@ -119,24 +125,32 @@ const PersonCard = (props) => {
                   <img src="https://img.icons8.com/material-outlined/24/000000/marker.png" width="20" alt="" />
                   <span className="font-bold text-black-600 ml-1">{areaString}</span>
                 </div>
-                <div className="mt-2 text-sm text-black-400">Last Seen Area</div>
+                <div className="mt-2 text-sm text-gray-500">Last Seen Area</div>
               </div>
             </div>
           </div>
 
           <div className="w-100 flex flex-grow flex-col items-end justify-start">
-            <div className="flex flex-col space-x-3">
-              <button className="flex rounded-md bg-blue-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => lookDetail(props.id)}>
-                Update
-              </button>
-              <button className="flex rounded-md bg-green-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => onSubscribe(props.id)}>
-                Subscribe
-              </button>
-            </div>
+            {isCarePartner && (
+              <div className="flex flex-col space-x-3">
+                <button className="flex rounded-md bg-blue-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => lookDetail(props.id)}>
+                  Update
+                </button>
+                {(props.caseStatus === 'Missing') && 
+                  <button className="flex rounded-md bg-red-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => onDelete(props.id)}>
+                    Delete
+                  </button>
+                }
+                {(props.caseStatus === 'Found') && 
+                  <button className="flex rounded-md bg-red-500 py-2 px-4 text-white mb-2 w-60 justify-center" onClick={() => onDelete(props.id)}>
+                    ReFind
+                  </button>
+                }
+              </div>
+            )}
           </div>
         </div>
       </div>
-      {showPopup && <MissingDocumentEditPopup initialData={props} onClose={onClosePopup} onSave={handleSave} />}
     </div>
   );
 };

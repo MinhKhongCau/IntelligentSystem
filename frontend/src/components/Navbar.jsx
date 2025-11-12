@@ -32,10 +32,14 @@ const Navbar = () => {
               <Link to="/missingpeople" className="text-white no-underline font-medium text-base px-3 py-2 rounded-md hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm transition-all duration-300">Missing List</Link>
             )}
             {isAuthenticated && (
-              <Link to="/locations" className="text-white no-underline font-medium text-base px-3 py-2 rounded-md hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm transition-all duration-300">Locations</Link>
-            )}{isAuthenticated && (
-              <Link to="/missinglocations" className="text-white no-underline font-medium text-base px-3 py-2 rounded-md hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm transition-all duration-300"> Surveillance </Link>
+              <Link to="/my-subscriptions" className="text-white no-underline font-medium text-base px-3 py-2 rounded-md hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm transition-all duration-300">My Subscriptions</Link>
             )}
+            {isAuthenticated && (
+              <Link to="/locations" className="text-white no-underline font-medium text-base px-3 py-2 rounded-md hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm transition-all duration-300">Locations</Link>
+            )}
+            {/* {isAuthenticated && (
+              <Link to="/missinglocations" className="text-white no-underline font-medium text-base px-3 py-2 rounded-md hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm transition-all duration-300"> Surveillance </Link>
+            )} */}
           </div>
 
           <div className="flex items-center">
@@ -76,6 +80,9 @@ const Navbar = () => {
           <Link to="/" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-white hover:bg-opacity-10 hover:backdrop-blur-sm">Home</Link>
           {isAuthenticated && (
             <Link to="/missingpeople" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm">Missing List</Link>
+          )}
+          {isAuthenticated && (
+            <Link to="/my-subscriptions" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm">My Subscriptions</Link>
           )}
           {isAuthenticated && (
             <Link to="/locations" className="text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-400 hover:opacity-75 hover:backdrop-blur-sm">Locations</Link>

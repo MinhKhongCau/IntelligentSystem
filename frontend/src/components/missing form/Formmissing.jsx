@@ -109,8 +109,8 @@ const Formmissing = () => {
           },
         });
 
-        if (imageRes.data && imageRes.data.url) {
-          finalFacePictureUrl = imageRes.data.url;
+        if (imageRes.data || imageRes.data.url) {
+          finalFacePictureUrl = imageRes.data?.url || imageRes.data;
         } else {
           throw new Error('Image upload succeeded but did not return a URL.');
         }

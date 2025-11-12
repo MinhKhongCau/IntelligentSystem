@@ -11,9 +11,11 @@ com/intelligent/missingperson/security/JwtAuthenticationFilter.class
 com/intelligent/missingperson/entity/Volunteer$VolunteerBuilder.class
 com/intelligent/missingperson/service/AreaService.class
 com/intelligent/missingperson/dto/MissingDocumentRequest.class
+com/intelligent/missingperson/dto/ReportMissingDTO.class
 com/intelligent/missingperson/entity/VolunteerSubscriptionId.class
 com/intelligent/missingperson/repository/AccountRepository.class
 com/intelligent/missingperson/dto/AreaRequest.class
+com/intelligent/missingperson/until/CaseStatus.class
 com/intelligent/missingperson/service/VolunteerService.class
 com/intelligent/missingperson/entity/DetailAreaAccount.class
 com/intelligent/missingperson/dto/MissingDocumentResponseDTO.class
@@ -28,6 +30,8 @@ com/intelligent/missingperson/repository/VolunteerRepository.class
 com/intelligent/missingperson/entity/ManageDocumentId.class
 com/intelligent/missingperson/entity/CarePartner.class
 com/intelligent/missingperson/dto/LoginRequest.class
+com/intelligent/missingperson/controller/AccountController.class
+com/intelligent/missingperson/repository/VolunteerReportRepository.class
 com/intelligent/missingperson/dto/LoginResponse$LoginResponseBuilder.class
 com/intelligent/missingperson/entity/Cctv$CctvBuilder.class
 com/intelligent/missingperson/controller/AreaController.class
@@ -39,10 +43,12 @@ com/intelligent/missingperson/entity/DetailAreaAccount$DetailAreaAccountBuilder.
 com/intelligent/missingperson/entity/ManageDocument$ManageDocumentBuilder.class
 com/intelligent/missingperson/dto/AccountDTO$AccountDTOBuilder.class
 com/intelligent/missingperson/dto/AreaDTO$AreaDTOBuilder.class
+com/intelligent/missingperson/dto/ReportMissingDTO$ReportMissingDTOBuilder.class
 com/intelligent/missingperson/entity/VolunteerSubscription$VolunteerSubscriptionBuilder.class
 com/intelligent/missingperson/entity/Police.class
 com/intelligent/missingperson/entity/Police$PoliceBuilder.class
 com/intelligent/missingperson/repository/CarePartnerRepository.class
+com/intelligent/missingperson/repository/VolunteerSubcriptionRepository.class
 com/intelligent/missingperson/controller/AuthController.class
 com/intelligent/missingperson/entity/MissingDocument.class
 com/intelligent/missingperson/entity/Account.class
@@ -53,6 +59,7 @@ com/intelligent/missingperson/controller/MissingDocumentController.class
 com/intelligent/missingperson/dto/AccountDTO.class
 com/intelligent/missingperson/dto/RegisterCarePartnerRequest.class
 com/intelligent/missingperson/security/CustomUserDetailsService.class
+com/intelligent/missingperson/service/PictureService.class
 com/intelligent/missingperson/dto/RegisterRequest.class
 com/intelligent/missingperson/entity/Cctv.class
 com/intelligent/missingperson/dto/RegisterRequest$RegisterRequestBuilder.class

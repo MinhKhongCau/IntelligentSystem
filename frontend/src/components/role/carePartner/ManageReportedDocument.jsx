@@ -78,7 +78,7 @@ const ManageReportedDocuments = () => {
                 reporterRelationship={element.reporterRelationship}
                 caseStatus={element.caseStatus}
                 missingArea={element.missingArea}
-                reporter={element.reporter}
+                reporter={element.reporterId}
                 onDelete={handleDeleted}
                 onUpdate={handleUpdated}
               />

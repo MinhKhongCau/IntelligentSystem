@@ -67,7 +67,7 @@ const MissingDocumentEditPopup = ({ onClose, onSave, initialData }) => {
         },
       });
 
-
+      console.log(response)
 
       // Backend returns the image URL (relative path like "/uploads/filename.jpg")
       const imageUrl = response.data.url || response.data.imageUrl || response.data;
@@ -125,7 +125,7 @@ const MissingDocumentEditPopup = ({ onClose, onSave, initialData }) => {
       reportDate: formData.reportDate,
       reporterRelationship: formData.reporterRelationship,
       missingAreaId: formData.missingArea?.id,
-      reporterId: formData.reporterId?.id,
+      reporterId: formData.reporter,
       caseStatus: formData.caseStatus
     };
 
