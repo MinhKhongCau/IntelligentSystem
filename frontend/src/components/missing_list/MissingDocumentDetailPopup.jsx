@@ -103,12 +103,12 @@ const MissingDocumentDetailPopup = ({ onClose, ...props }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center overflow-y-auto p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-start justify-center overflow-y-auto p-4" onClick={onClose}>
       <div 
         className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg md:max-w-2xl lg:max-w-4xl transform transition-all my-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 md:p-8">
+        <div className="p-6 md:p-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-2xl md:text-3xl font-bold text-gray-900">Missing Person Details</h3>
             <button
@@ -140,7 +140,7 @@ const MissingDocumentDetailPopup = ({ onClose, ...props }) => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto pr-2 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {detailFields.map((field, index) => (
                   <div key={index} className={`bg-gray-50 p-3 rounded-lg ${field.span === 2 ? 'md:col-span-2' : ''}`}>
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{field.label}</p>

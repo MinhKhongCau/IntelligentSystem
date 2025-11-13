@@ -305,6 +305,23 @@ public class MissingDocumentController {
         }
     }
 
+    @GetMapping("/reports/{missingDocumentId}")
+    public ResponseEntity<?> getReportsByMissingDocumentId(@PathVariable Integer missingDocumentId) {
+        try {
+            if (!missingDocumentService.existsById(missingDocumentId)) {
+                return ResponseEntity.badRequest()
+                        .body("Missing document not found with id: " + missingDocumentId);
+            }
+            
+            List<com.intelligent.missingperson.dto.VolunteerReportDTO> reports = 
+                    missingDocumentService.getReportsByMissingDocumentId(missingDocumentId);
+            return ResponseEntity.ok(reports);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error retrieving reports: " + e.getMessage());
+        }
+    }
+
     @PostMapping(
         path = "/submit-missing-person",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import L from 'leaflet'; // Import L for custom icons
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useAuth } from '../../contexts/AuthContext'; // For the token
-import './AddMissingArea.css'; // We will create this CSS file
+import { useAuth } from '../../contexts/AuthContext';
 
 // Fix for default marker icon issue with webpack
 delete L.Icon.Default.prototype._getIconUrl;
@@ -20,10 +19,9 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 function MapClickHandler({ setPosition, setForm }) {
   const map = useMapEvents({
     async click(e) {
-      setPosition(e.latlng); // Set the state with new coordinates
-      map.flyTo(e.latlng, map.getZoom()); // Move map to clicked spot
+      setPosition(e.latlng);
+      map.flyTo(e.latlng, map.getZoom());
       
-      // Reverse geocoding to get address information
       try {
         const response = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&addressdetails=1`
@@ -33,7 +31,6 @@ function MapClickHandler({ setPosition, setForm }) {
         if (data && data.address) {
           const address = data.address;
           
-          // Auto-fill form fields based on the geocoding result
           setForm(prev => ({
             ...prev,
             commune: address.suburb || address.neighbourhood || address.hamlet || prev.commune,
@@ -44,7 +41,6 @@ function MapClickHandler({ setPosition, setForm }) {
         }
       } catch (error) {
         console.error('Error with reverse geocoding:', error);
-        // Continue without auto-filling if geocoding fails
       }
     },
   });
@@ -59,7 +55,7 @@ const AddMissingArea = ({ onAreaAdded, onClose }) => {
     province: '',
     country: '',
   });
-  const [position, setPosition] = useState(null); // Will hold { lat: number, lng: number }
+  const [position, setPosition] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -95,16 +91,14 @@ const AddMissingArea = ({ onAreaAdded, onClose }) => {
     console.log('Submitting Area Data:', areaData);
 
     try {
-      // !! IMPORTANT: You need to create this backend endpoint !!
       const res = await axios.post(`${API_BASE}/api/areas/add`, areaData, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json', // Sending JSON now, not FormData
+          'Content-Type': 'application/json',
         },
       });
 
       if (res.status === 201) {
-        // Pass the new area data back to the parent and close
         onAreaAdded(res.data);
       }
     } catch (err) {
@@ -115,73 +109,99 @@ const AddMissingArea = ({ onAreaAdded, onClose }) => {
   };
 
   return (
-    <div className="add-area-container">
-      <button type="button" className="close-button" onClick={onClose}>&times;</button>
-      <form onSubmit={handleSubmit} className="area-form">
-        <h2>Add New Surveillance Area</h2>
-        {error && <div className="error-message">{error}</div>}
-        <div className="input-box">
-          <span className="details">Commune / Ward</span>
+    <div className="flex gap-5 p-10 max-w-7xl mx-auto my-5 bg-white rounded-lg shadow-lg relative">
+      <button 
+        type="button" 
+        className="absolute top-0 right-0 m-4 m bg-transparent border-none text-4xl leading-none text-gray-600 cursor-pointer font-light hover:text-gray-800"
+        onClick={onClose}
+      >
+        &times;
+      </button>
+
+      <form onSubmit={handleSubmit} className="flex-none min-w-[300px] w-[10rem]">
+        <h2 className="text-2xl font-medium mb-5">Add New Surveillance Area</h2>
+        
+        {error && (
+          <div className="text-red-600 bg-red-100 p-4 border border-red-600 p-2.5 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        <div className="mb-4">
+          <span className="block font-medium mb-1">Commune / Ward</span>
           <input
             type="text"
             value={form.commune}
             onChange={(e) => setForm({ ...form, commune: e.target.value })}
             placeholder="e.g., Bến Nghé"
+            className="h-11 w-full outline-none rounded border border-gray-300 py-2 px-4 text-base border-b-2 transition-all focus:border-purple-600"
           />
         </div>
-        <div className="input-box">
-          <span className="details">District</span>
+
+        <div className="mb-4">
+          <span className="block font-medium mb-1">District</span>
           <input
             type="text"
             value={form.district}
             onChange={(e) => setForm({ ...form, district: e.target.value })}
             placeholder="e.g., District 1"
+            className="h-11 w-full outline-none rounded border border-gray-300 py-2 px-4 text-base border-b-2 transition-all focus:border-purple-600"
           />
         </div>
-        <div className="input-box">
-          <span className="details">Province / City</span>
+
+        <div className="mb-4">
+          <span className="block font-medium mb-1">Province / City</span>
           <input
             type="text"
             value={form.province}
             onChange={(e) => setForm({ ...form, province: e.target.value })}
             placeholder="e.g., Ho Chi Minh City"
             required
+            className="h-11 w-full outline-none rounded border border-gray-300 p-4 text-base border-b-2 transition-all focus:border-purple-600"
           />
         </div>
-        <div className="input-box">
-          <span className="details">Country</span>
+
+        <div className="mb-4">
+          <span className="block font-medium mb-1">Country</span>
           <input
             type="text"
             value={form.country}
             onChange={(e) => setForm({ ...form, country: e.target.value })}
             placeholder="e.g., Vietnam"
             required
+            className="h-11 w-full outline-none rounded border border-gray-300 py-2 px-4 text-base border-b-2 transition-all focus:border-purple-600"
           />
         </div>
 
-        <div className="input-box">
-          <span className="details">Select Location on Map</span>
+        <div className="mb-4">
+          <span className="block font-medium mb-1">Select Location on Map</span>
           {position && (
-            <p>
+            <p className="text-sm text-gray-600">
               Lat: {position.lat.toFixed(4)}, Lng: {position.lng.toFixed(4)}
             </p>
           )}
         </div>
 
-        <div className="button">
-          <button type="submit" disabled={submitting}>
+        <div className="h-11 mt-6">
+          <button 
+            type="submit" 
+            disabled={submitting}
+            className="h-full w-full outline-none text-white border-nonen py-2 px-4 text-lg font-medium rounded tracking-wide bg-gradient-to-br from-blue-400 to-purple-600 cursor-pointer transition-all hover:bg-gradient-to-bl disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
             {submitting ? 'Saving...' : 'Save Area'}
           </button>
         </div>
       </form>
 
-      <div className="map-wrapper">
+      <div 
+      className="map-container" 
+      style={{ height: '500px', width: '90%', margin: '0 auto 2rem auto', border: '1px solid #ccc', borderRadius: '8px' }}>
         <MapContainer
-          center={[10.7769, 106.7009]} // Default center (e.g., Ho Chi Minh City)
+          center={[10.7769, 106.7009]}
           zoom={13}
-          className="leaflet-map"
+          className="w-full h-full rounded-lg"
+          style={{ height: '100%', minHeight: '450px' }}
         >
-          {/* This part provides the map "theme" (the visual tiles) */}
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

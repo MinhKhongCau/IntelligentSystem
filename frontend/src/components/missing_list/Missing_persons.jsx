@@ -33,7 +33,7 @@ const Missing_persons = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-300">
       <div className="flex justify-center w-screen overflow-x-hidden">
         <div className="flex items-center justify-center gap-4 mt-24 mb-20">
           <div className="text-4xl font-bold font-sans">Missing People</div>

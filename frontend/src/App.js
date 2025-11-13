@@ -24,11 +24,12 @@ import ManageMissingList from './components/role/police/ManageMissingList';
 import ManageReportedDocuments from './components/role/carePartner/ManageReportedDocument';
 import MissingDocumentEditPage from './components/role/carePartner/MissingDocumentEditPage';
 import SubscribedDocuments from './components/missing_list/SubscribedDocuments';
+import MissingReports from './components/role/carePartner/MissingReports';
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div>
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg h-screen">
           <Navbar/>
           <Routes>   
             <Route path="/" element={<Hero/>} />
@@ -93,6 +94,11 @@ function App() {
             <Route path="/my-subscriptions" element={
               <ProtectedRoute>
                 <SubscribedDocuments/>
+              </ProtectedRoute>
+            } />
+            <Route path="/missing-reports/:id" element={
+              <ProtectedRoute>
+                <MissingReports/>
               </ProtectedRoute>
             } />
           </Routes>

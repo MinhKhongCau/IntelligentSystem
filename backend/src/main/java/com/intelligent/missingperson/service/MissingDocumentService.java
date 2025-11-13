@@ -165,6 +165,43 @@ public class MissingDocumentService {
         return false;
     }
 
+    public List<com.intelligent.missingperson.dto.VolunteerReportDTO> getReportsByMissingDocumentId(Integer missingDocumentId) {
+        List<VolunteerReport> reports = volunteerReportRepository.findByMissingDocumentId(missingDocumentId);
+        return reports.stream()
+                .map(this::convertReportToDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private com.intelligent.missingperson.dto.VolunteerReportDTO convertReportToDTO(VolunteerReport report) {
+        com.intelligent.missingperson.dto.AreaDTO areaDTO = null;
+        if (report.getSightingArea() != null) {
+            areaDTO = com.intelligent.missingperson.dto.AreaDTO.builder()
+                    .id(report.getSightingArea().getId())
+                    .commune(report.getSightingArea().getCommune())
+                    .district(report.getSightingArea().getDistrict())
+                    .province(report.getSightingArea().getProvince())
+                    .country(report.getSightingArea().getCountry())
+                    .latitude(report.getSightingArea().getLatitude())
+                    .longitude(report.getSightingArea().getLongitude())
+                    .build();
+        }
+
+        return com.intelligent.missingperson.dto.VolunteerReportDTO.builder()
+                .id(report.getId())
+                .missingDocumentId(report.getMissingDocument() != null ? report.getMissingDocument().getId() : null)
+                .volunteerId(report.getVolunteer() != null ? report.getVolunteer().getId() : null)
+                .volunteerName(report.getVolunteer() != null && report.getVolunteer().getAccount() != null 
+                        ? report.getVolunteer().getAccount().getFullName() : "Unknown")
+                .reportTime(report.getReportTime())
+                .sightingPicture(report.getSightingPicture())
+                .sightingArea(areaDTO)
+                .latitude(report.getLatitude())
+                .longitude(report.getLongitude())
+                .description(report.getDescription())
+                .reportStatus(report.getReportStatus())
+                .build();
+    }
+
     public void updateDocumentFields(MissingDocument document, MissingDocumentRequest request) {
         document.setFullName(request.getName());
         document.setBirthday(request.getBirthday());
