@@ -25,6 +25,7 @@ import ManageReportedDocuments from './components/role/carePartner/ManageReporte
 import MissingDocumentEditPage from './components/role/carePartner/MissingDocumentEditPage';
 import SubscribedDocuments from './components/missing_list/SubscribedDocuments';
 import MissingReports from './components/role/carePartner/MissingReports';
+import MissingDocumentDetail from './components/role/police/MissingDocumentDetail';
 function App() {
   return (
     <AuthProvider>
@@ -99,6 +100,11 @@ function App() {
             <Route path="/missing-reports/:id" element={
               <ProtectedRoute>
                 <MissingReports/>
+              </ProtectedRoute>
+            } />
+            <Route path="/police/missing-document/:id" element={
+              <ProtectedRoute>
+                <MissingDocumentDetail/>
               </ProtectedRoute>
             } />
           </Routes>

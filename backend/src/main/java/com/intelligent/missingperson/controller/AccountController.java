@@ -39,6 +39,10 @@ public class AccountController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String name
         ) {
+        if (authentication == null) {
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+        
         String username = authentication.getName();
         Optional<Account> optAccount = accountService.findByUsername(username);
         if (optAccount.isPresent() && policeService.existsById(optAccount.get().getId())) {
@@ -55,6 +59,7 @@ public class AccountController {
                         .phone(account.getPhone())
                         .profilePictureUrl(account.getProfilePictureUrl())
                         .accountType(account.getAccountType())
+                        .accountStatus(account.getAccountStatus())
                         .build();
             }).toList();
             return ResponseEntity.ok(accountDTOs);

@@ -21,5 +21,6 @@ public class AccountDTO {
     private String phone;
     private String profilePictureUrl;
     private String accountType;
+    private Boolean accountStatus;
     private List<Roles> roles;
 }
