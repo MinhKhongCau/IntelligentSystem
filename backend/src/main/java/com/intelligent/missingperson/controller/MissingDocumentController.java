@@ -8,6 +8,7 @@ import com.intelligent.missingperson.service.CarePartnerService;
 import com.intelligent.missingperson.service.MissingDocumentService;
 import com.intelligent.missingperson.service.PictureService;
 import com.intelligent.missingperson.service.VolunteerService;
+import com.intelligent.missingperson.until.CaseStatus;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -367,6 +368,67 @@ public class MissingDocumentController {
                 .build();
         missingDocumentService.saveVolunteerReport(volunteerReport);
         return ResponseEntity.status(201).body("Volunteer report submitted successfully.");
+    }
+
+    @PutMapping("/{id}/mark-found")
+    public ResponseEntity<?> markAsFound(@PathVariable Integer id) {
+        try {
+            Optional<MissingDocument> existingDoc = missingDocumentService.findById(id);
+            if (existingDoc.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(String.format("Document not found with id: %d", id));
+            }
+
+            MissingDocument document = existingDoc.get();
+            
+            // Only allow marking as found if currently missing
+            if (!"Missing".equals(document.getCaseStatus())) {
+                return ResponseEntity.badRequest()
+                        .body("Can only mark documents with 'Missing' status as found. Current status: " + document.getCaseStatus());
+            }
+
+            document.setCaseStatus(CaseStatus.Found.name());
+            document.setUpdateDate(LocalDateTime.now());
+            
+            MissingDocument updatedDocument = missingDocumentService.save(document);
+            MissingDocumentResponseDTO responseDTO = missingDocumentService.convertToDTO(updatedDocument);
+            
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error marking document as found: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/update-status")
+    public ResponseEntity<?> updateStatus(
+            @PathVariable Integer id,
+            @RequestParam String status) {
+        try {
+            // Validate status
+            if (!List.of("Missing", "Found", "Rejected", "Accepted").contains(status)) {
+                return ResponseEntity.badRequest()
+                        .body("Invalid status. Allowed values: Missing, Found, Rejected, Accepted");
+            }
+
+            Optional<MissingDocument> existingDoc = missingDocumentService.findById(id);
+            if (existingDoc.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(String.format("Document not found with id: %d", id));
+            }
+
+            MissingDocument document = existingDoc.get();
+            document.setCaseStatus(status);
+            document.setUpdateDate(LocalDateTime.now());
+            
+            MissingDocument updatedDocument = missingDocumentService.save(document);
+            MissingDocumentResponseDTO responseDTO = missingDocumentService.convertToDTO(updatedDocument);
+            
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error updating document status: " + e.getMessage());
+        }
     }
 
     private ResponseEntity<?> validateDateTimeFields(MissingDocumentRequest request) {

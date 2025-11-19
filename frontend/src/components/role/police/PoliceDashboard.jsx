@@ -14,10 +14,10 @@ const PoliceDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 p-5">
       <div className="flex justify-between items-center mb-10 pb-5 border-b-2 border-gray-300">
-        <h1 className="text-gray-800 text-4xl font-bold m-0">Police Dashboard</h1>
+        <h1 className="text-gray-800 text-4xl font-bold mx-auto">Police Dashboard</h1>
       </div>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Missing Persons</h3>
@@ -52,7 +52,7 @@ const PoliceDashboard = () => {
             </button>
           </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
+          {/* <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Surveillance</h3>
             <p className="text-gray-600 text-base leading-relaxed mb-5">Access surveillance area</p>
             <button 
@@ -61,7 +61,7 @@ const PoliceDashboard = () => {
             >
               Open Surveillance
             </button>
-          </div>
+          </div> */}
 
           <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Manage Accounts</h3>

@@ -6,7 +6,7 @@ const Index = () => {
     return (
         <div>
             <section>
-            <div className="w-full relative pb-10 px-6 xl:px-0">
+            <div className="w-screen h-screen relative pb-10 px-6 xl:px-0">
                 <img className="absolute w-full inset-0 h-full object-cover object-center" src="https://cdn.tuk.dev/assets/templates/weCare/hero2-bg.png" alt="we care family"/>
                 {/* <Navbar/> */}
                 <div className="pt-12 lg:flex items-center relative z-10 container mx-auto">

@@ -30,7 +30,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg h-screen">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg h-auto">
           <Navbar/>
           <Routes>   
             <Route path="/" element={<Hero/>} />

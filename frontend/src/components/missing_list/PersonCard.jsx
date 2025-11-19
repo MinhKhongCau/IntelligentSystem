@@ -1,11 +1,13 @@
 import axios from 'axios';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MissingDocumentDetailPopup from './MissingDocumentDetailPopup';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const PersonCard = (props) => {
   const [showPopup, setShowPopup] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
   
   const lookDetail = () => {
     setShowPopup(true);
@@ -14,6 +16,44 @@ const PersonCard = (props) => {
   const onClosePopup = () => {
     setShowPopup(false);
   };
+
+  // Check if user is already subscribed
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+          setCheckingSubscription(false);
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+        const volunteerId = user?.id;
+
+        if (!volunteerId) {
+          setCheckingSubscription(false);
+          return;
+        }
+
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE}/api/missing-documents/subscriptions/${volunteerId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        // Check if current document is in subscribed list
+        const subscribed = response.data.some(doc => doc.id === props.id);
+        setIsSubscribed(subscribed);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [props.id]);
 
   const onSubscribe = async (missingDocumentId) => {
     try {
@@ -43,6 +83,7 @@ const PersonCard = (props) => {
 
       if (response.status === 201) {
         alert('Successfully subscribed to updates for this missing person.');
+        setIsSubscribed(true);
       } else {
         alert('Subscription failed.');
       }
@@ -112,13 +153,18 @@ const PersonCard = (props) => {
             >
               View Details
             </button>
-            {props.caseStatus !== 'Found' && (
+            {props.caseStatus !== 'Found' && !isSubscribed && !checkingSubscription && (
               <button 
                 className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm shadow-sm"
                 onClick={() => onSubscribe(props.id)}
               >
                 Subscribe
               </button>
+            )}
+            {isSubscribed && (
+              <div className="px-6 py-2 bg-gray-100 text-gray-600 rounded-md text-center font-medium text-sm">
+                ✓ Subscribed
+              </div>
             )}
           </div>
         </div>

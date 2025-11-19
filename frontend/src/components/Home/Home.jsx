@@ -2,7 +2,7 @@ import React from 'react';
 
 const Home = () => {
   return (
-    <div className="flex items-center h-full bg-cover bg-top bg-no-repeat" 
+    <div className="flex items-center h-screen bg-cover bg-top bg-no-repeat" 
          style={{ backgroundImage: "url('/hero-bg.png')" }}>
       <div className="mx-10 md:mx-20 lg:mx-40">
         <div className="text-left">

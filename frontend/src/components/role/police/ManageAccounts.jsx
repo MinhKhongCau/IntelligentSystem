@@ -7,6 +7,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const ManageAccounts = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    id: null,
     username: "",
     password: "",
     verifyPassword: "",
@@ -21,7 +22,7 @@ const ManageAccounts = () => {
   const [accounts, setAccounts] = useState([]);
   const [notification, setNotification] = useState({ message: '', type: '' });
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingAccount, setEditingAccount] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -80,18 +81,7 @@ const ManageAccounts = () => {
       });
 
       showNotification('Account created successfully', 'success');
-      setFormData({
-        username: "",
-        password: "",
-        verifyPassword: "",
-        email: "",
-        fullName: "",
-        birthday: "",
-        address: "",
-        gender: "male",
-        phone: "",
-        profilePictureUrl: "",
-      });
+      handleCancelEdit();
       fetchAccounts();
     } catch (err) {
       showNotification(err.response?.data?.message || 'Error creating account', 'error');
@@ -117,7 +107,10 @@ const ManageAccounts = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this account?')) return;
+    const account = accounts.find(acc => acc.id === id);
+    const action = account?.accountStatus ? 'reject' : 'delete';
+    
+    if (!window.confirm(`Are you sure you want to ${action} this account?`)) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -126,7 +119,7 @@ const ManageAccounts = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      showNotification('Account deleted successfully', 'success');
+      showNotification(`Account ${action}ed successfully`, 'success');
       fetchAccounts();
     } catch (error) {
       console.error('Error deleting account:', error);
@@ -135,9 +128,39 @@ const ManageAccounts = () => {
   };
 
   const handleEdit = (account) => {
-    setEditingAccount(account);
-    // You can implement edit functionality here
-    showNotification('Edit functionality coming soon', 'info');
+    setIsEditing(true);
+    setFormData({
+      id: account.id,
+      username: account.username || "",
+      password: "",
+      verifyPassword: "",
+      email: account.email || "",
+      fullName: account.fullName || "",
+      birthday: account.birthday || "",
+      address: account.address || "",
+      gender: account.gender ? "female" : "male",
+      phone: account.phone || "",
+      profilePictureUrl: account.profilePictureUrl || "",
+    });
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setFormData({
+      id: null,
+      username: "",
+      password: "",
+      verifyPassword: "",
+      email: "",
+      fullName: "",
+      birthday: "",
+      address: "",
+      gender: "male",
+      phone: "",
+      profilePictureUrl: "",
+    });
   };
 
   const filteredAccounts = accounts.filter(account =>
@@ -158,10 +181,12 @@ const ManageAccounts = () => {
         </div>
       )}
 
-      <div className="flex gap-5 max-w-7xl min-w-96 mx-auto">
-        {/* Create Account Form */}
-        <div className="flex-[1_1_30%] bg-white p-5 rounded-lg shadow-md">
-          <h2 className="mb-5 text-gray-800 text-2xl font-semibold">Create New Account</h2>
+      <div className="flex gap-5 max-w-7xl mx-auto">
+        {/* Create/Edit Account Form */}
+        <div className="w-1/3 bg-white p-5 rounded-lg shadow-md">
+          <h2 className="mb-5 text-gray-800 text-2xl font-semibold">
+            {isEditing ? 'Edit Account' : 'Create New Account'}
+          </h2>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input 
               type="text" 
@@ -170,7 +195,7 @@ const ManageAccounts = () => {
               value={formData.username} 
               onChange={handleChange} 
               required 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="password" 
@@ -179,7 +204,7 @@ const ManageAccounts = () => {
               value={formData.password} 
               onChange={handleChange} 
               required 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="password" 
@@ -188,7 +213,7 @@ const ManageAccounts = () => {
               value={formData.verifyPassword} 
               onChange={handleChange} 
               required 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="email" 
@@ -197,7 +222,7 @@ const ManageAccounts = () => {
               value={formData.email} 
               onChange={handleChange} 
               required 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="text" 
@@ -205,7 +230,7 @@ const ManageAccounts = () => {
               placeholder="Full Name" 
               value={formData.fullName} 
               onChange={handleChange} 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="date" 
@@ -213,7 +238,7 @@ const ManageAccounts = () => {
               placeholder="Birthday" 
               value={formData.birthday} 
               onChange={handleChange} 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="text" 
@@ -221,7 +246,7 @@ const ManageAccounts = () => {
               placeholder="Address" 
               value={formData.address} 
               onChange={handleChange} 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             
             <div>
@@ -258,7 +283,7 @@ const ManageAccounts = () => {
               placeholder="Phone" 
               value={formData.phone} 
               onChange={handleChange} 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             <input 
               type="text" 
@@ -266,21 +291,32 @@ const ManageAccounts = () => {
               placeholder="Profile Picture URL" 
               value={formData.profilePictureUrl} 
               onChange={handleChange} 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500"
+              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
             
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded cursor-pointer text-base font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating...' : 'Create Account'}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="flex-1 p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded cursor-pointer text-base font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Account' : 'Create Account')}
+              </button>
+              {isEditing && (
+                <button 
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-4 py-3 bg-gray-500 text-white rounded cursor-pointer text-base font-medium hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
         {/* Accounts List */}
-        <div className="flex-[1_1_70%] bg-white p-5 rounded-lg shadow-md">
+        <div className="flex-1 bg-white p-5 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-gray-800 text-2xl font-semibold">All Accounts ({filteredAccounts.length})</h2>
             <input

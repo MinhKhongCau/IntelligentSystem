@@ -138,7 +138,7 @@ const Formmissing = () => {
     <div className="flex items-center min-h-screen py-10 px-4 mx-24">
       <div className="flex flex-col lg:flex-row items-start justify-center gap-10 w-full max-w-7xl mx-auto">
         {/* Form Section */}
-        <div className="w-full lg:w-auto flex-1">
+        <div className="w-3/4 lg:w-auto flex-1">
           <div className="max-w-3xl w-full bg-white p-6 md:p-8 rounded-lg shadow-lg">
             <h2 className="text-3xl md:text-4xl font-medium mb-6 relative pb-2 before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-1 before:w-8 before:rounded before:bg-gradient-to-r before:from-blue-400 before:to-purple-600">
               Report Missing Person
@@ -160,7 +160,7 @@ const Formmissing = () => {
                     value={form.name} 
                     onChange={handleChange} 
                     required
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -171,7 +171,7 @@ const Formmissing = () => {
                     name="birthday" 
                     value={form.birthday} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -183,7 +183,7 @@ const Formmissing = () => {
                     value={form.missingTime}
                     onChange={handleChange}
                     required
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -194,7 +194,7 @@ const Formmissing = () => {
                     name="identityCardNumber" 
                     value={form.identityCardNumber} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -205,7 +205,7 @@ const Formmissing = () => {
                     name="height" 
                     value={form.height} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -216,7 +216,7 @@ const Formmissing = () => {
                     name="weight" 
                     value={form.weight} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -227,7 +227,7 @@ const Formmissing = () => {
                     name="identifyingCharacteristic"
                     value={form.identifyingCharacteristic}
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -238,7 +238,7 @@ const Formmissing = () => {
                     name="lastKnownOutfit" 
                     value={form.lastKnownOutfit} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -249,7 +249,7 @@ const Formmissing = () => {
                     name="medicalConditions" 
                     value={form.medicalConditions} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -280,7 +280,7 @@ const Formmissing = () => {
                     name="reporterRelationship" 
                     value={form.reporterRelationship} 
                     onChange={handleChange}
-                    className="h-11 w-full outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                    className="h-11 w-full outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                   />
                 </div>
 
@@ -292,7 +292,7 @@ const Formmissing = () => {
                       value={form.missingAreaId} 
                       onChange={handleChange} 
                       required
-                      className="flex-1 h-11 outline-none text-base rounded px-4 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
+                      className="flex-1 h-11 outline-none text-base rounded px-4 py-2 border border-gray-300 border-b-2 transition-all focus:border-purple-600"
                     >
                       <option value="" disabled>Select an area</option>
                       {areas.map(area => (
@@ -312,7 +312,7 @@ const Formmissing = () => {
                 </div>
               </div>
 
-              <div className="my-4">
+              <div className="my-4 py-2">
                 <span className="text-lg font-medium">Gender</span>
                 <div className="flex gap-8 my-3">
                   <label className="flex items-center cursor-pointer">
@@ -344,7 +344,7 @@ const Formmissing = () => {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="h-full w-full rounded border-none text-white text-lg font-medium tracking-wide cursor-pointer transition-all bg-[#a2b6ec] hover:bg-[#667eea] disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="h-full w-full px-4 py-2 rounded border-none text-white text-lg font-medium tracking-wide cursor-pointer hover:shadow transition-all bg-gradient-to-r from-idigo-500 to-purple-600"
                 >
                   {submitting ? 'Reporting...' : 'Report'}
                 </button>

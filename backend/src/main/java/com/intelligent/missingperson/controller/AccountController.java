@@ -59,7 +59,6 @@ public class AccountController {
                         .phone(account.getPhone())
                         .profilePictureUrl(account.getProfilePictureUrl())
                         .accountType(account.getAccountType())
-                        .accountStatus(account.getAccountStatus())
                         .build();
             }).toList();
             return ResponseEntity.ok(accountDTOs);

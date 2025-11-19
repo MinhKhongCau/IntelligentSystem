@@ -74,7 +74,7 @@ const Dashboard = () => {
             </button>
           </div>
 
-          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+          {/* <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
             <h3 className="mb-3 text-2xl font-semibold text-gray-800">Surveillance</h3>
             <p className="mb-5 text-base leading-relaxed text-gray-600">Access surveillance area</p>
             <button 
@@ -83,7 +83,7 @@ const Dashboard = () => {
             >
               Open Surveillance
             </button>
-          </div>
+          </div> */}
 
         {isCarePartner ? (
           <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">

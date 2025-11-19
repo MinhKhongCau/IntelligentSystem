@@ -52,12 +52,11 @@ const ManageMissingList = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `${API_BASE}/api/missing-documents/${id}`,
-        { caseStatus: status },
+        `${API_BASE}/api/missing-documents/${id}/update-status?status=${status}`,
+        {},
         {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
           },
         }
       );
@@ -79,6 +78,18 @@ const ManageMissingList = () => {
   const handleReject = (id) => {
     if (window.confirm('Are you sure you want to reject this document?')) {
       updateDocumentStatus(id, 'Rejected');
+    }
+  };
+
+  const handleMarkAsFound = (id) => {
+    if (window.confirm('Mark this person as found?')) {
+      updateDocumentStatus(id, 'Found');
+    }
+  };
+
+  const handleSearchAgain = (id) => {
+    if (window.confirm('Mark this person as missing again?')) {
+      updateDocumentStatus(id, 'Missing');
     }
   };
 
@@ -183,28 +194,39 @@ const ManageMissingList = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleViewDetails(doc.id)}
-                      className="flex-1 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm font-medium"
+                      className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm font-medium"
                     >
                       View Details
                     </button>
-                    {doc.caseStatus !== 'Accepted' && (
+                    
+                    {/* Show different buttons based on status */}
+                    {(doc.caseStatus === 'Found' || doc.caseStatus === 'Rejected') ? (
                       <button
-                        onClick={() => handleAccept(doc.id)}
-                        className="flex-1 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+                        onClick={() => handleSearchAgain(doc.id)}
+                        className="w-full py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors text-sm font-medium"
                       >
-                        Accept
+                        Search Again
                       </button>
-                    )}
-                    {doc.caseStatus !== 'Rejected' && (
-                      <button
-                        onClick={() => handleReject(doc.id)}
-                        className="flex-1 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm font-medium"
-                      >
-                        Reject
-                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        {doc.caseStatus === 'Missing' && (
+                          <button
+                            onClick={() => handleMarkAsFound(doc.id)}
+                            className="flex-1 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm font-medium"
+                          >
+                            Mark Found
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleReject(doc.id)}
+                          className="flex-1 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm font-medium"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

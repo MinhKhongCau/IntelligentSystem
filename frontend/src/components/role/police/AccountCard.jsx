@@ -29,21 +29,24 @@ const AccountCard = ({ account, onEdit, onDelete, onAccept }) => {
             Edit
           </button>
         )}
-        {!account.accountStatus && onAccept && (
-          <button 
-            onClick={() => onAccept(account.id)}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
-          >
-            Accept
-          </button>
-        )}
-        {onDelete && (
-          <button 
-            onClick={() => onDelete(account.id)}
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
-          >
-            Delete
-          </button>
+        {account.accountStatus ? (
+          onDelete && (
+            <button 
+              onClick={() => onDelete(account.id)}
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
+            >
+              Reject
+            </button>
+          )
+        ) : (
+          onAccept && (
+            <button 
+              onClick={() => onAccept(account.id)}
+              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors"
+            >
+              Accept
+            </button>
+          )
         )}
       </div>
     </div>

@@ -87,14 +87,44 @@ const MissingDocumentDetail = () => {
     <div className="min-h-screen bg-gray-50 p-5">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-5 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-          >
-            ← Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800">Missing Person Details</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-5">
+            <button
+              onClick={() => navigate(-1)}
+              className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            >
+              ← Back
+            </button>
+            <h1 className="text-3xl font-bold text-gray-800">Missing Person Details</h1>
+          </div>
+          {document.caseStatus === 'Missing' && (
+            <button
+              onClick={async () => {
+                if (window.confirm('Mark this person as found?')) {
+                  try {
+                    const token = localStorage.getItem('token');
+                    await axios.put(
+                      `${API_BASE}/api/missing-documents/${id}/mark-found`,
+                      {},
+                      {
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                        },
+                      }
+                    );
+                    alert('Person marked as found!');
+                    fetchDocumentAndReports();
+                  } catch (err) {
+                    console.error('Error updating status:', err);
+                    alert(err.response?.data || 'Error updating status');
+                  }
+                }
+              }}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              Mark as Found
+            </button>
+          )}
         </div>
 
         {/* Document Details */}
