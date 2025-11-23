@@ -120,11 +120,15 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    volumes:
+      - ./Intelligent:/app
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC: video-stream
       FLASK_HOST: 0.0.0.0
       FLASK_PORT: 5001
+      FLASK_ENV: development
+      FLASH_DEBUG: 1
     networks:
       - video-network
     restart: unless-stopped

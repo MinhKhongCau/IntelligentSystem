@@ -1,11 +1,15 @@
-from flask import Flask, Response, render_template_string, jsonify
-from kafka import KafkaConsumer
+from flask import Flask, Response, render_template, jsonify, request
 import cv2
 import numpy as np
 import json
 import base64
 from threading import Thread, Lock
 import logging
+import subprocess
+import os
+import time
+from video_consumer import VideoStreamConsumer
+from service.StreamService import start_consumer_thread, cleanup_processes
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -15,57 +19,21 @@ current_frame = None
 frame_lock = Lock()
 
 # Kafka configuration
-KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
 KAFKA_TOPIC = 'video-stream'
 
-class VideoStreamConsumer:
-    def __init__(self, topic, bootstrap_servers):
-        self.topic = topic
-        self.bootstrap_servers = bootstrap_servers
-        self.consumer = None
-        self.running = False
-        
-    def start(self):
-        """Start consuming video frames from Kafka"""
-        self.running = True
-        self.consumer = KafkaConsumer(
-            self.topic,
-            bootstrap_servers=self.bootstrap_servers,
-            auto_offset_reset='latest',
-            enable_auto_commit=True,
-            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-        )
-        
-        logging.info(f"Started consuming from topic: {self.topic}")
-        
-        for message in self.consumer:
-            if not self.running:
-                break
-                
-            try:
-                data = message.value
-                
-                # Decode base64 image
-                img_data = base64.b64decode(data['frame'])
-                nparr = np.frombuffer(img_data, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                
-                # Update global frame
-                global current_frame
-                with frame_lock:
-                    current_frame = frame
-                    
-            except Exception as e:
-                logging.error(f"Error processing frame: {e}")
-                
-    def stop(self):
-        """Stop consuming"""
-        self.running = False
-        if self.consumer:
-            self.consumer.close()
+# Global variables for camera management
+active_cameras = {}  # {ip: process}
+camera_lock = Lock()
 
-# Initialize consumer
-video_consumer = VideoStreamConsumer(KAFKA_TOPIC, KAFKA_BOOTSTRAP_SERVERS)
+def update_frame(frame):
+    """Callback to update current frame"""
+    global current_frame
+    with frame_lock:
+        current_frame = frame
+
+# Initialize consumer with callback
+video_consumer = VideoStreamConsumer(KAFKA_TOPIC, KAFKA_BOOTSTRAP_SERVERS, frame_callback=update_frame)
 
 def generate_frames():
     """Generator function to yield video frames"""
@@ -94,207 +62,9 @@ def generate_frames():
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 @app.route('/')
-def index():
+def index_page():
     """Main page with video player"""
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Police Video Monitoring System</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-            }
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 10px;
-                padding: 30px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            }
-            h1 {
-                color: #333;
-                text-align: center;
-                margin-bottom: 10px;
-            }
-            .subtitle {
-                text-align: center;
-                color: #666;
-                margin-bottom: 30px;
-            }
-            .video-container {
-                position: relative;
-                width: 100%;
-                max-width: 960px;
-                margin: 0 auto;
-                background: #000;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            }
-            .video-stream {
-                width: 100%;
-                height: auto;
-                display: block;
-            }
-            .controls {
-                margin-top: 20px;
-                text-align: center;
-            }
-            .btn {
-                padding: 12px 30px;
-                margin: 0 10px;
-                border: none;
-                border-radius: 5px;
-                font-size: 16px;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-            .btn-primary {
-                background: #667eea;
-                color: white;
-            }
-            .btn-primary:hover {
-                background: #5568d3;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            }
-            .btn-danger {
-                background: #f56565;
-                color: white;
-            }
-            .btn-danger:hover {
-                background: #e53e3e;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
-            }
-            .status {
-                text-align: center;
-                margin-top: 20px;
-                padding: 15px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-            .status.online {
-                background: #c6f6d5;
-                color: #22543d;
-            }
-            .status.offline {
-                background: #fed7d7;
-                color: #742a2a;
-            }
-            .info-panel {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-                margin-top: 20px;
-            }
-            .info-card {
-                background: #f7fafc;
-                padding: 15px;
-                border-radius: 8px;
-                border-left: 4px solid #667eea;
-            }
-            .info-card h3 {
-                margin: 0 0 5px 0;
-                font-size: 14px;
-                color: #666;
-            }
-            .info-card p {
-                margin: 0;
-                font-size: 20px;
-                font-weight: bold;
-                color: #333;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🚔 Police Video Monitoring System</h1>
-            <p class="subtitle">Real-time CCTV Stream via Kafka</p>
-            
-            <div class="video-container">
-                <img class="video-stream" src="{{ url_for('video_feed') }}" alt="Video Stream">
-            </div>
-            
-            <div class="controls">
-                <button class="btn btn-primary" onclick="refreshStream()">🔄 Refresh Stream</button>
-                <button class="btn btn-danger" onclick="fullscreen()">⛶ Fullscreen</button>
-            </div>
-            
-            <div id="status" class="status online">
-                ● Stream Active
-            </div>
-            
-            <div class="info-panel">
-                <div class="info-card">
-                    <h3>Kafka Topic</h3>
-                    <p>video-stream</p>
-                </div>
-                <div class="info-card">
-                    <h3>Server</h3>
-                    <p>localhost:9092</p>
-                </div>
-                <div class="info-card">
-                    <h3>Status</h3>
-                    <p id="connection-status">Connected</p>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-            function refreshStream() {
-                const img = document.querySelector('.video-stream');
-                const src = img.src;
-                img.src = '';
-                setTimeout(() => {
-                    img.src = src + '?t=' + new Date().getTime();
-                }, 100);
-            }
-            
-            function fullscreen() {
-                const container = document.querySelector('.video-container');
-                if (container.requestFullscreen) {
-                    container.requestFullscreen();
-                } else if (container.webkitRequestFullscreen) {
-                    container.webkitRequestFullscreen();
-                } else if (container.msRequestFullscreen) {
-                    container.msRequestFullscreen();
-                }
-            }
-            
-            // Check stream status periodically
-            setInterval(() => {
-                fetch('/api/status')
-                    .then(response => response.json())
-                    .then(data => {
-                        const statusDiv = document.getElementById('status');
-                        const connectionStatus = document.getElementById('connection-status');
-                        
-                        if (data.streaming) {
-                            statusDiv.className = 'status online';
-                            statusDiv.textContent = '● Stream Active';
-                            connectionStatus.textContent = 'Connected';
-                        } else {
-                            statusDiv.className = 'status offline';
-                            statusDiv.textContent = '○ Stream Inactive';
-                            connectionStatus.textContent = 'Waiting...';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Status check failed:', error);
-                    });
-            }, 3000);
-        </script>
-    </body>
-    </html>
-    """
-    return render_template_string(html)
+    return render_template('index.html')
 
 @app.route('/video_feed')
 def video_feed():
@@ -320,15 +90,212 @@ def health():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'video-streaming'})
 
-def start_consumer_thread():
-    """Start Kafka consumer in background thread"""
-    consumer_thread = Thread(target=video_consumer.start, daemon=True)
-    consumer_thread.start()
-    logging.info("Kafka consumer thread started")
+@app.route('/api/camera/start', methods=['POST'])
+def start_camera():
+    """Start camera stream by IP"""
+    try:
+        data = request.get_json()
+        camera_ip = data.get('ip')
+        
+        if not camera_ip:
+            return jsonify({'error': 'IP address is required'}), 400
+        
+        # Validate IP format (basic validation)
+        ip_parts = camera_ip.split('.')
+        if len(ip_parts) != 4 or not all(part.isdigit() and 0 <= int(part) <= 255 for part in ip_parts):
+            return jsonify({'error': 'Invalid IP address format'}), 400
+        
+        
+        with camera_lock:
+            # Check if camera is already running
+            if camera_ip in active_cameras:
+                return jsonify({
+                    'message': f'Camera {camera_ip} is already running',
+                    'status': 'already_active'
+                }), 200
+            
+            # Check if video file exists
+            video_file = f"video/{camera_ip}.mp4"
+            if not os.path.exists(video_file):
+                return jsonify({
+                    'error': f'Video file {video_file} not found',
+                    'suggestion': f'Please place a video file named {video_file} in the current directory'
+                }), 404
+            
+            # Start video producer process
+            try:
+                print(f"Start {camera_ip} camera")
+                # Check if running in Docker
+                kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+                print(f"Kafka is running in {kafka_servers}")
+                
+                process = subprocess.Popen([
+                    'python', 'video_producer.py', video_file, '--kafka-servers', kafka_servers
+                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
+                # Wait a moment to check if process started successfully
+                time.sleep(2)
+                if process.poll() is not None:
+                    # Process has terminated
+                    stdout, stderr = process.communicate()
+                    return jsonify({
+                        'error': 'Failed to start video producer',
+                        'details': stderr.decode('utf-8') if stderr else 'Unknown error'
+                    }), 500
+                
+                active_cameras[camera_ip] = process
+                
+                return jsonify({
+                    'message': f'Camera {camera_ip} started successfully',
+                    'status': 'started',
+                    'video_file': video_file,
+                    'process_id': process.pid
+                }), 200
+                
+            except Exception as e:
+                return jsonify({
+                    'error': f'Failed to start camera process: {str(e)}'
+                }), 500
+                
+    except Exception as e:
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/camera/stop', methods=['POST'])
+def stop_camera():
+    """Stop camera stream by IP"""
+    try:
+        data = request.get_json()
+        camera_ip = data.get('ip')
+        
+        if not camera_ip:
+            return jsonify({'error': 'IP address is required'}), 400
+        
+        with camera_lock:
+            if camera_ip not in active_cameras:
+                return jsonify({
+                    'message': f'Camera {camera_ip} is not running',
+                    'status': 'not_active'
+                }), 200
+            
+            process = active_cameras[camera_ip]
+            
+            try:
+                # Terminate the process
+                process.terminate()
+                
+                # Wait for process to terminate gracefully
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    # Force kill if it doesn't terminate gracefully
+                    process.kill()
+                    process.wait()
+                
+                del active_cameras[camera_ip]
+                
+                return jsonify({
+                    'message': f'Camera {camera_ip} stopped successfully',
+                    'status': 'stopped'
+                }), 200
+                
+            except Exception as e:
+                return jsonify({
+                    'error': f'Failed to stop camera process: {str(e)}'
+                }), 500
+                
+    except Exception as e:
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/camera/list', methods=['GET'])
+def list_cameras():
+    """List all active cameras"""
+    try:
+        with camera_lock:
+            camera_list = []
+            for ip, process in active_cameras.items():
+                # Check if process is still running
+                if process.poll() is None:
+                    camera_list.append({
+                        'ip': ip,
+                        'status': 'running',
+                        'process_id': process.pid,
+                        'video_file': f"{ip}.mp4"
+                    })
+                else:
+                    # Process has died, remove from active list
+                    camera_list.append({
+                        'ip': ip,
+                        'status': 'stopped',
+                        'process_id': process.pid,
+                        'video_file': f"{ip}.mp4"
+                    })
+            
+            # Clean up dead processes
+            active_cameras_copy = active_cameras.copy()
+            for ip, process in active_cameras_copy.items():
+                if process.poll() is not None:
+                    del active_cameras[ip]
+            
+            return jsonify({
+                'cameras': camera_list,
+                'total_active': len([c for c in camera_list if c['status'] == 'running'])
+            }), 200
+            
+    except Exception as e:
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/camera/status/<ip>', methods=['GET'])
+def camera_status(ip):
+    """Get status of specific camera"""
+    try:
+        with camera_lock:
+            if ip not in active_cameras:
+                return jsonify({
+                    'ip': ip,
+                    'status': 'inactive',
+                    'video_file': f"{ip}.mp4",
+                    'file_exists': os.path.exists(f"{ip}.mp4")
+                }), 200
+            
+            process = active_cameras[ip]
+            if process.poll() is None:
+                return jsonify({
+                    'ip': ip,
+                    'status': 'running',
+                    'process_id': process.pid,
+                    'video_file': f"{ip}.mp4",
+                    'file_exists': os.path.exists(f"{ip}.mp4")
+                }), 200
+            else:
+                # Process has died
+                del active_cameras[ip]
+                return jsonify({
+                    'ip': ip,
+                    'status': 'stopped',
+                    'video_file': f"video/{ip}.mp4",
+                    'file_exists': os.path.exists(f"{ip}.mp4")
+                }), 200
+                
+    except Exception as e:
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+
+
+import atexit
+
+def cleanup_on_exit():
+    """Cleanup function for atexit"""
+    cleanup_processes(active_cameras, camera_lock)
+
+atexit.register(cleanup_on_exit)
 
 if __name__ == '__main__':
     # Start Kafka consumer
-    start_consumer_thread()
+    start_consumer_thread(video_consumer)
     
     # Start Flask server
-    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
+    try:
+        app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
+    except KeyboardInterrupt:
+        logging.info("Shutting down server...")
+        cleanup_processes(active_cameras, camera_lock)

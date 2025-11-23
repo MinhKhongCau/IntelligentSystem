@@ -12,6 +12,10 @@ const CCTVMonitor = () => {
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [cameras, setCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState({ message: '', type: '' });
 
   useEffect(() => {
     // Check stream status periodically
@@ -25,11 +29,68 @@ const CCTVMonitor = () => {
       }
     };
 
+    // Load camera list
+    const loadCameras = async () => {
+      try {
+        const response = await axios.get(`${VIDEO_STREAM_URL}/api/camera/list`);
+        setCameras(response.data.cameras);
+      } catch (error) {
+        console.error('Failed to load cameras:', error);
+      }
+    };
+
     checkStatus();
-    const interval = setInterval(checkStatus, 3000);
+    loadCameras();
+    const interval = setInterval(() => {
+      checkStatus();
+      loadCameras();
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification({ message: '', type: '' }), 3000);
+  };
+
+  const handleStartCamera = async () => {
+    if (!selectedCamera) {
+      showNotification('Please enter a camera IP address', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${VIDEO_STREAM_URL}/api/camera/start`, {
+        ip: selectedCamera
+      });
+      
+      showNotification(response.data.message, 'success');
+      setSelectedCamera('');
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || 'Failed to start camera';
+      showNotification(errorMsg, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStopCamera = async (cameraIp) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`${VIDEO_STREAM_URL}/api/camera/stop`, {
+        ip: cameraIp
+      });
+      
+      showNotification(response.data.message, 'success');
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || 'Failed to stop camera';
+      showNotification(errorMsg, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -62,6 +123,17 @@ const CCTVMonitor = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Notification */}
+        {notification.message && (
+          <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            notification.type === 'success' ? 'bg-green-100 text-green-800' :
+            notification.type === 'error' ? 'bg-red-100 text-red-800' :
+            'bg-blue-100 text-blue-800'
+          }`}>
+            {notification.message}
+          </div>
+        )}
+
         {/* Header */}
         <div className="bg-white rounded-xl shadow-2xl p-8 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -87,6 +159,79 @@ const CCTVMonitor = () => {
           </div>
         </div>
 
+        {/* Camera Control Panel */}
+        <div className="bg-white rounded-xl shadow-2xl p-6 mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="text-3xl">📹</span>
+            Camera Control Panel
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Start Camera */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Start New Camera</h3>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  placeholder="Enter IP address (e.g., 10.0.0.1)"
+                  value={selectedCamera}
+                  onChange={(e) => setSelectedCamera(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={handleStartCamera}
+                  disabled={isLoading}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Starting...' : 'Start'}
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Make sure you have a video file named [IP].mp4 (e.g., 10.0.0.1.mp4)
+              </p>
+            </div>
+
+            {/* Active Cameras */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">
+                Active Cameras ({cameras.filter(c => c.status === 'running').length})
+              </h3>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {cameras.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No cameras active</p>
+                ) : (
+                  cameras.map((camera) => (
+                    <div key={camera.ip} className="flex items-center justify-between bg-white p-3 rounded border">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full ${
+                          camera.status === 'running' ? 'bg-green-500' : 'bg-red-500'
+                        }`}></span>
+                        <span className="font-medium">{camera.ip}</span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          camera.status === 'running' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {camera.status}
+                        </span>
+                      </div>
+                      {camera.status === 'running' && (
+                        <button
+                          onClick={() => handleStopCamera(camera.ip)}
+                          disabled={isLoading}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors disabled:opacity-50"
+                        >
+                          Stop
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Video Container */}
         <div className="bg-white rounded-xl shadow-2xl p-6 mb-6">
           <div 
@@ -104,7 +249,7 @@ const CCTVMonitor = () => {
             />
             
             {/* Overlay Controls (visible on hover) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+            {/* <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
               <div className="flex gap-3">
                 <button
                   onClick={handleRefresh}
@@ -126,7 +271,7 @@ const CCTVMonitor = () => {
                   {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Controls */}

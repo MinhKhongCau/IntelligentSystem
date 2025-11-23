@@ -147,20 +147,30 @@ class VideoProducer:
 
 if __name__ == '__main__':
     import sys
+    import argparse
     
-    producer = VideoProducer(topic='video-stream', bootstrap_servers='localhost:9092')
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Video Producer for Kafka Streaming')
+    parser.add_argument('source', nargs='?', help='Camera ID or video file path')
+    parser.add_argument('--kafka-servers', default='localhost:9092', help='Kafka bootstrap servers')
+    parser.add_argument('--topic', default='video-stream', help='Kafka topic')
+    parser.add_argument('--fps', type=int, default=30, help='Frames per second')
     
-    # Check command line arguments
-    if len(sys.argv) > 1:
-        video_source = sys.argv[1]
+    args = parser.parse_args()
+    
+    producer = VideoProducer(topic=args.topic, bootstrap_servers=args.kafka_servers)
+    
+    # Check video source
+    if args.source:
+        video_source = args.source
         if video_source.isdigit():
             # Camera ID
-            producer.stream_from_camera(camera_id=int(video_source), fps=30)
+            producer.stream_from_camera(camera_id=int(video_source), fps=args.fps)
         else:
             # Video file path
-            producer.stream_from_video_file(video_path=video_source, fps=30, loop=True)
+            producer.stream_from_video_file(video_path=video_source, fps=args.fps, loop=True)
     else:
         # Default: use webcam
-        print("Usage: python video_producer.py [camera_id|video_file_path]")
+        print("Usage: python video_producer.py [camera_id|video_file_path] [--kafka-servers SERVERS]")
         print("Starting with default camera (0)...")
-        producer.stream_from_camera(camera_id=0, fps=30)
+        producer.stream_from_camera(camera_id=0, fps=args.fps)

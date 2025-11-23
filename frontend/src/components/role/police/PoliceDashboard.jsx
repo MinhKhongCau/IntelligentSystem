@@ -84,6 +84,16 @@ const PoliceDashboard = () => {
               Manage Forms
             </button>
           </div>
+          <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
+            <h3 className="text-gray-800 text-2xl font-semibold mb-3">Manage CCTV</h3>
+            <p className="text-gray-600 text-base leading-relaxed mb-5">Find missing list detect missing person from cctv</p>
+            <button 
+              onClick={() => navigate('/cctv-monitor')}
+              className="w-full py-3 px-5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg text-base font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all"
+            >
+              CCTV Monitor
+            </button>
+          </div>
         </div>
       </div>
     </div>
