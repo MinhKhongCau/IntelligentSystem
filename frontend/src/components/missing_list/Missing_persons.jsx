@@ -15,7 +15,10 @@ const Missing_persons = () => {
     setError('');
     try {
       const res = await axios.get(`${API_BASE}/api/missing-documents`);
-      setCases(Array.isArray(res.data) ? res.data : []);
+      const allCases = Array.isArray(res.data) ? res.data : [];
+      // Filter to show only cases with "Missing" status
+      const missingCases = allCases.filter(c => c.caseStatus === 'Missing');
+      setCases(missingCases);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError('Failed to load cases. Please try again.');

@@ -331,7 +331,7 @@ public class MissingDocumentController {
             @RequestParam("missingDocumentId") Integer missingDocumentId,
             @RequestParam("volunteerId") Integer volunteerId,
             @RequestParam("description") String description,
-            @RequestParam("sightingPicture") String sightingPicture,
+            @RequestParam(value = "sightingPicture", required = false) String sightingPicture,
             @RequestParam("sightingAreaId") Integer sightingAreaId
     ) {
         if (missingDocumentId == null) {
@@ -342,6 +342,9 @@ public class MissingDocumentController {
         }
         if (description == null || description.isBlank()) {
             return ResponseEntity.badRequest().body("Description is required.");
+        }
+        if (sightingAreaId == null) {
+            return ResponseEntity.badRequest().body("Sighting area ID is required.");
         }
         
         Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(missingDocumentId);

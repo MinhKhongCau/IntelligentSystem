@@ -6,20 +6,23 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest 
     container_name: mssql-container
     environment:
-      
       SA_PASSWORD: "MinhMinh@1234" 
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
     volumes:
-      # Save data in database when container is removed
       - sql-data:/var/opt/mssql
+    networks:
+      - app-network
+      - video-network
 
   # 2. Service cho Spring Boot (Backend)
   backend-app:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+    image: intelligent-backend:dev
     container_name: springboot-container
     ports:
       - "8080:8080"
@@ -30,19 +33,23 @@ services:
       - ./backend/uploads:/app/uploads 
       - maven-repo:/root/.m2
     environment:
-      # Kết nối đến service database bằng tên service 'sql-server'
       SPRING_DATASOURCE_URL: "jdbc:sqlserver://sql-server:1433;databaseName=IntelligentSystemDB;encrypt=false;"
       SPRING_DATASOURCE_USERNAME: "sa"
       SPRING_DATASOURCE_PASSWORD: "MinhMinh@1234"
       SPRING_DEVTOOLS_RESTART_ENABLED: "true"
       SPRING_DEVTOOLS_LIVERELOAD_ENABLED: "true"
     depends_on:
-      - sql-server 
+      - sql-server
+    networks:
+      - app-network
+      - video-network
+
   # 3. Service cho React (Frontend)
   frontend-app:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+    image: intelligent-frontend:dev
     container_name: react-container
     ports:
       - "3000:3000" 
@@ -51,10 +58,89 @@ services:
       - react-modules:/app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://localhost:8080
     depends_on:
-      - backend-app 
-    
+      - backend-app
+    networks:
+      - app-network
+
+  # 4. Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper-container
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - video-network
+    healthcheck:
+      test: echo stat | nc localhost 2181
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # 5. Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-container
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - video-network
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server localhost:9092
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # 6. Video Streaming Service
+  video-streaming-service:
+    build:
+      context: ./Intelligent
+      dockerfile: Dockerfile
+    image: intelligent-video-streaming:dev
+    container_name: video-streaming-container
+    ports:
+      - "5001:5001"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: video-stream
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5001
+    networks:
+      - video-network
+    restart: unless-stopped
+
 volumes:
   sql-data:
+    name: intelligent-sql-data
   maven-repo:
+    name: intelligent-maven-repo
   react-modules:
+    name: intelligent-react-modules
+
+networks:
+  app-network:
+    name: intelligent-app-network
+    driver: bridge
+  video-network:
+    name: intelligent-video-network
+    driver: bridge

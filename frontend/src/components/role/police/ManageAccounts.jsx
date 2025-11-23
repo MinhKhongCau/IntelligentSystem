@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AccountCard from './AccountCard';
+import ImageUploader from '../../common/ImageUploader';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -285,13 +286,11 @@ const ManageAccounts = () => {
               onChange={handleChange} 
               className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
             />
-            <input 
-              type="text" 
-              name="profilePictureUrl" 
-              placeholder="Profile Picture URL" 
-              value={formData.profilePictureUrl} 
-              onChange={handleChange} 
-              className="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:border-blue-500 px-4 py-2"
+            
+            <ImageUploader
+              currentImage={formData.profilePictureUrl}
+              onImageUpdate={(imageUrl) => setFormData({ ...formData, profilePictureUrl: imageUrl })}
+              className="mt-2"
             />
             
             <div className="flex gap-2">
