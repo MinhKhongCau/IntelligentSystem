@@ -27,6 +27,19 @@ A comprehensive web application for managing missing person cases with intellige
 - **Axios** for API communication
 - **Day.js** for date handling
 
+### AI/ML Services
+- **Python 3.x** for intelligent services
+- **TensorFlow/Keras** for facial recognition
+- **FaceNet** pre-trained model for face embeddings
+- **ChromaDB** for vector storage
+- **Apache Kafka** for real-time video streaming
+- **Flask** for AI service API
+
+### Infrastructure
+- **Docker & Docker Compose** for containerization
+- **Kafka & Zookeeper** for message streaming
+- **SQL Server 2019** for data persistence
+
 ## Database Schema
 
 The system uses the following main entities:
@@ -48,34 +61,86 @@ The system uses the following main entities:
 - Java 17 or higher (for local development)
 - Node.js 16 or higher (for local development)
 - Maven 3.6 or higher (for local development)
+- SQL Server Management Studio or Azure Data Studio (for database management)
 
 ### Quick Start with Docker (Recommended)
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd <project-directory>
-   ```
+#### 1. Clone the repository
+```bash
+git clone <repository-url>
+cd <project-directory>
+```
 
-2. **Start all services with hot reload**:
-   ```bash
-   docker compose -f docker-compose.dev.yml up --build
-   ```
+#### 2. Initialize the Database
 
-   This will start:
-   - SQL Server database on port `1433`
-   - Spring Boot backend on port `8080` (with hot reload)
-   - React frontend on port `3000` (with hot reload)
+**Option A: Using Docker SQL Server**
 
-3. **Access the application**:
-   - Frontend: `http://localhost:3000`
-   - Backend API: `http://localhost:8080`
-   - Database: `localhost:1433`
+First, start only the database service:
+```bash
+docker compose -f docker-compose.dev.yml up -d sqlserver
+```
 
-4. **Stop all services**:
-   ```bash
-   docker compose -f docker-compose.dev.yml down
-   ```
+Wait for SQL Server to be ready (about 30 seconds), then restore the database using the backup file:
+
+```bash
+# Connect to SQL Server and run the backup script
+docker exec -it <sqlserver-container-name> /opt/mssql-tools/bin/sqlcmd \
+  -S localhost -U sa -P 'MinhMinh@1234' \
+  -i /path/to/BK_DBS_INTELLIGENT_SYS_6-11-2024.sql
+```
+
+**Option B: Using SQL Server Management Studio**
+
+1. Connect to `localhost:1433` with credentials:
+   - Username: `sa`
+   - Password: `MinhMinh@1234`
+2. Open the file `BK_DBS_INTELLIGENT_SYS_6-11-2024.sql`
+3. Execute the script to create the database and tables with sample data
+
+#### 3. Build and Start All Services
+
+**For development with hot reload:**
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+**For production:**
+```bash
+docker compose up --build
+```
+
+This will start:
+- SQL Server database on port `1433`
+- Spring Boot backend on port `8080` (with hot reload in dev mode)
+- React frontend on port `3000` (with hot reload in dev mode)
+- Kafka (if configured) on port `9092`
+- Zookeeper (if configured) on port `2181`
+
+#### 4. Access the application
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8080`
+- Database: `localhost:1433`
+
+#### 5. Stop all services
+```bash
+# Stop and remove containers
+docker compose -f docker-compose.dev.yml down
+
+# Stop and remove containers with volumes (clean slate)
+docker compose -f docker-compose.dev.yml down -v
+```
+
+### Rebuild After Changes
+
+If you need to rebuild the containers after making changes:
+
+```bash
+# Stop existing containers
+docker compose -f docker-compose.dev.yml down
+
+# Rebuild and start
+docker compose -f docker-compose.dev.yml up --build
+```
 
 ### Hot Reload Development
 
@@ -113,6 +178,14 @@ docker compose -f docker-compose.dev.yml logs -f frontend-app
 
 ### Local Development (Without Docker)
 
+#### Database Setup
+
+1. **Install SQL Server 2019 or later**
+2. **Create the database** by running `BK_DBS_INTELLIGENT_SYS_6-11-2024.sql` script
+3. **Verify connection** at `localhost:1433` with credentials:
+   - Username: `sa`
+   - Password: `MinhMinh@1234`
+
 #### Backend Setup
 
 1. **Navigate to backend directory**:
@@ -127,8 +200,12 @@ docker compose -f docker-compose.dev.yml logs -f frontend-app
    spring.datasource.password=MinhMinh@1234
    ```
 
-3. **Run the application**:
+3. **Build and run the application**:
    ```bash
+   # Build the project
+   mvn clean install
+
+   # Run the application
    mvn spring-boot:run
    ```
 
@@ -153,15 +230,40 @@ docker compose -f docker-compose.dev.yml logs -f frontend-app
 
    The frontend will be available at `http://localhost:3000`
 
+#### Intelligent Services Setup (Optional)
+
+1. **Navigate to Intelligent directory**:
+   ```bash
+   cd Intelligent
+   ```
+
+2. **Create virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Start the Flask service**:
+   ```bash
+   python app.py
+   ```
+
+   The AI service will be available at `http://localhost:5001`
+
 ### Production Build
 
 For production deployment without hot reload:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-This creates optimized builds without development tools.
+This creates optimized builds without development tools and runs in detached mode.
 
 ## API Endpoints
 
@@ -195,14 +297,53 @@ This creates optimized builds without development tools.
 5. **Update Status**: Mark cases as found or missing
 6. **Search**: Use the search functionality to find specific cases
 
+
+## Service Communication
+
+```
+┌─────────────┐
+│   Frontend  │
+└──────┬──────┘
+       │
+       ├──────────────┬
+       │              │  
+       ▼              ▼ 
+┌─────────────┐ ┌─────────────┐
+│   Stream    │ │   Backend   │
+│   Server    │ │   (Java)    │
+│  Port 5001  │ │  Port 8080  │
+└──────┬──────┘ └─────────────┘
+       │
+       ▼
+┌─────────────┐
+│    Kafka    │
+│  Port 9092  │
+└─────────────┘
+```
+
 ## Sample Data
 
-The database includes sample data for testing:
-- Police officer account (username: `police_trung`)
-- Care partner account (username: `partner_lien`)
-- Volunteer account (username: `volun_minh`)
-- Sample missing person case for "Trần Thị Mai"
-- Sample areas and CCTV systems
+The database backup file `BK_DBS_INTELLIGENT_SYS_6-11-2024.sql` includes sample data for testing:
+
+### Test Accounts
+- **Police Officer**: 
+  - Username: `police_trung`
+  - Password: `123456` (hashed in database)
+  - Email: `trung.police@gov.vn`
+
+- **Care Partner**: 
+  - Username: `partner_lien`
+  - Email: `lien.care@mail.com`
+
+- **Volunteers**:
+  - Username: `ngoquangminh` / Email: `minhngoquang6@gmail.com`
+  - Username: `heoconthiengu` / Email: `minhngoquang@gmail.com`
+  - Username: `testuser` / Email: `symphogearw2016@gmail.com`
+
+### Sample Data
+- Missing person case: "Ngo Quang Minh"
+- Sample areas: District 1 and Tan Binh (Ho Chi Minh City)
+- CCTV systems ready for integration
 
 ## Security Features
 
@@ -213,11 +354,58 @@ The database includes sample data for testing:
 
 ## Development Notes
 
-- The application uses SQL Server with Vietnamese Unicode support
+- The application uses SQL Server with Vietnamese Unicode support (nvarchar fields)
 - All text fields support Vietnamese characters
 - Date/time handling uses Java 8 Time API
 - Frontend uses Material-UI for consistent design
 - API responses include proper error handling
+- JWT tokens expire after 24 hours
+- File uploads are stored in `backend/uploads/` directory
+- CCTV video streams use Kafka for real-time processing
+- Face recognition uses FaceNet model with 128-dimensional embeddings
+
+## Troubleshooting
+
+### Database Connection Issues
+```bash
+# Check if SQL Server container is running
+docker ps | grep sqlserver
+
+# View SQL Server logs
+docker logs <sqlserver-container-name>
+
+# Restart SQL Server container
+docker compose -f docker-compose.dev.yml restart sqlserver
+```
+
+### Backend Not Starting
+```bash
+# Check backend logs
+docker logs <backend-container-name>
+
+# Rebuild backend
+docker compose -f docker-compose.dev.yml up --build backend-app
+```
+
+### Frontend Build Errors
+```bash
+# Clear node_modules and reinstall
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+
+# Or rebuild container
+docker compose -f docker-compose.dev.yml up --build frontend-app
+```
+
+### Port Already in Use
+```bash
+# Find process using port 8080 (backend)
+lsof -i :8080  # On Linux/Mac
+netstat -ano | findstr :8080  # On Windows
+
+# Kill the process or change port in docker-compose.dev.yml
+```
 
 ## Future Enhancements
 

@@ -1,0 +1,206 @@
+version: '3.8'
+
+services:
+  # 1. Database Service (SQL Server)
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest 
+    container_name: mssql-container
+    environment:
+      SA_PASSWORD: "MinhMinh@1234" 
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - app-network
+      - video-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "MinhMinh@1234" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # 2. Backend Service (Spring Boot)
+  backend-app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    image: intelligent-backend:latest
+    container_name: springboot-container
+    pull_policy: build
+    ports:
+      - "8080:8080"
+      - "5005:5005"  # Debug port
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/pom.xml:/app/pom.xml
+      - ./backend/uploads:/app/uploads 
+      - maven-repo:/root/.m2
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://sql-server:1433;databaseName=IntelligentSystemDB;encrypt=false;"
+      SPRING_DATASOURCE_USERNAME: "sa"
+      SPRING_DATASOURCE_PASSWORD: "MinhMinh@1234"
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+      SPRING_DEVTOOLS_LIVERELOAD_ENABLED: "true"
+    depends_on:
+      sql-server:
+        condition: service_healthy
+    networks:
+      - app-network
+      - video-network
+    restart: unless-stopped
+
+  # 3. Frontend Service (React)
+  frontend-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: intelligent-frontend:latest
+    container_name: react-container
+    pull_policy: build
+    ports:
+      - "3000:3000" 
+    volumes:
+      - ./frontend:/app
+      - react-modules:/app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://localhost:8080
+      - REACT_APP_STREAM_URL=http://localhost:5001
+      - REACT_APP_SEARCH_URL=http://localhost:5002
+    depends_on:
+      - backend-app
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # 4. Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper-container
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - video-network
+    healthcheck:
+      test: echo stat | nc localhost 2181
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # 5. Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-container
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - video-network
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server localhost:9092
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # 6. Stream Server (Video Streaming & Camera Management)
+  stream-server:
+    build:
+      context: ./Intelligent
+      dockerfile: Dockerfile.stream
+    image: intelligent-stream-server:latest
+    container_name: stream-server-container
+    pull_policy: build
+    ports:
+      - "5001:5001"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./Intelligent:/app
+      - ./Intelligent/video:/app/video
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: video-stream
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5001
+      FLASK_ENV: production
+    networks:
+      - video-network
+    restart: unless-stopped
+    healthcheck:
+      test: curl -f http://localhost:5001/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 7. Search Server (Face Recognition & Person Search)
+  search-server:
+    build:
+      context: ./Intelligent
+      dockerfile: Dockerfile.search
+    image: intelligent-search-server:latest
+    container_name: search-server-container
+    pull_policy: build
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./Intelligent:/app
+      - ./Intelligent/video:/app/video
+      - ./Intelligent/models:/app/models
+    environment:
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5002
+      FLASK_ENV: production
+    networks:
+      - video-network
+    restart: unless-stopped
+    healthcheck:
+      test: curl -f http://localhost:5002/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Optional: Add GPU support for faster face recognition
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  sql-data:
+    name: intelligent-sql-data
+  maven-repo:
+    name: intelligent-maven-repo
+  react-modules:
+    name: intelligent-react-modules
+
+networks:
+  app-network:
+    name: intelligent-app-network
+    driver: bridge
+  video-network:
+    name: intelligent-video-network
+    driver: bridge

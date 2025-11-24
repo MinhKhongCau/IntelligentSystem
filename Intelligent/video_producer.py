@@ -188,7 +188,7 @@ if __name__ == '__main__':
             producer.stream_from_camera(camera_id=int(video_source), fps=args.fps)
         else:
             # Video file path
-            producer.stream_from_video_file(video_path=video_source, fps=args.fps, loop=True)
+            producer.stream_from_video_file(video_path=video_source, fps=args.fps, loop=False)
     else:
         # Default: use webcam
         print("Usage: python video_producer.py [camera_id|video_file_path] [--kafka-servers SERVERS] [--camera-ip IP]")

@@ -27,6 +27,7 @@ import SubscribedDocuments from './components/missing_list/SubscribedDocuments';
 import MissingReports from './components/role/carePartner/MissingReports';
 import MissingDocumentDetail from './components/role/police/MissingDocumentDetail';
 import CCTVMonitor from './components/role/police/CCTVMonitor';
+import CCTVReportPage from './components/role/police/CCTVReportPage';
 function App() {
   return (
     <AuthProvider>
@@ -108,9 +109,14 @@ function App() {
                 <MissingDocumentDetail/>
               </ProtectedRoute>
             } />
-            <Route path="/cctv-monitor" element={
+            <Route path="/police/cctv-monitor" element={
               <ProtectedRoute>
                 <CCTVMonitor/>
+              </ProtectedRoute>
+            } />
+            <Route path="/police/cctv-report" element={
+              <ProtectedRoute>
+                <CCTVReportPage/>
               </ProtectedRoute>
             } />
           </Routes>

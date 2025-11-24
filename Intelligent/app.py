@@ -14,7 +14,15 @@ from service.StreamService import start_consumer_thread, cleanup_processes, regi
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-logging.basicConfig(level=logging.INFO)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Suppress Kafka debug warnings
+logging.getLogger('kafka').setLevel(logging.ERROR)
 
 # Global variables for frame storage
 current_frame = None
@@ -32,6 +40,10 @@ camera_lock = Lock()
 camera_consumers = {}  # {ip: consumer}
 camera_frames = {}  # {ip: frame}
 camera_frames_lock = Lock()
+
+# Track active stream connections
+active_streams = {}  # {camera_ip: connection_count}
+active_streams_lock = Lock()
 
 def update_frame(frame):
     """Callback to update current frame (for default stream)"""
@@ -52,28 +64,43 @@ video_consumer = VideoStreamConsumer(KAFKA_TOPIC, KAFKA_BOOTSTRAP_SERVERS, frame
 def generate_frames():
     """Generator function to yield video frames"""
     global current_frame
+    no_frame_count = 0
+    max_no_frame_attempts = 150  # Stop after 5 seconds of no frames (at ~30fps)
     
-    while True:
-        with frame_lock:
-            if current_frame is None:
-                # Send a placeholder frame if no video available
-                placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
-                cv2.putText(placeholder, 'Waiting for video stream...', 
-                           (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                frame = placeholder
-            else:
-                frame = current_frame.copy()
-        
-        # Encode frame as JPEG
-        ret, buffer = cv2.imencode('.jpg', frame)
-        if not ret:
-            continue
+    try:
+        while True:
+            with frame_lock:
+                if current_frame is None:
+                    no_frame_count += 1
+                    if no_frame_count >= max_no_frame_attempts:
+                        logging.info("No frames available for extended period, stopping stream")
+                        break
+                    
+                    # Send a placeholder frame if no video available
+                    placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
+                    cv2.putText(placeholder, 'Waiting for video stream...', 
+                               (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    frame = placeholder
+                else:
+                    no_frame_count = 0
+                    frame = current_frame.copy()
             
-        frame_bytes = buffer.tobytes()
-        
-        # Yield frame in multipart format
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            # Encode frame as JPEG
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if not ret:
+                continue
+                
+            frame_bytes = buffer.tobytes()
+            
+            # Yield frame in multipart format
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            
+            time.sleep(0.033)  # ~30 fps
+    except GeneratorExit:
+        logging.info("Client disconnected from default stream")
+    except Exception as e:
+        logging.error(f"Error in generate_frames: {str(e)}")
 
 @app.route('/')
 def index_page():
@@ -89,28 +116,76 @@ def video_feed():
 @app.route('/video_feed/<camera_ip>')
 def video_feed_by_camera(camera_ip):
     """Video streaming route for specific camera"""
+    
+    # Track connection
+    with active_streams_lock:
+        if camera_ip not in active_streams:
+            active_streams[camera_ip] = 0
+        active_streams[camera_ip] += 1
+        logging.info(f"Client connected to camera {camera_ip} stream (total: {active_streams[camera_ip]})")
+    
     def generate_camera_frames():
-        while True:
-            with camera_frames_lock:
-                if camera_ip not in camera_frames or camera_frames[camera_ip] is None:
-                    # Send placeholder frame
-                    placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
-                    cv2.putText(placeholder, f'Waiting for camera {camera_ip}...', 
-                               (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-                    frame = placeholder
-                else:
-                    frame = camera_frames[camera_ip].copy()
-            
-            # Encode frame as JPEG
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                continue
+        no_frame_count = 0
+        max_no_frame_attempts = 150  # Stop after 5 seconds of no frames (at ~30fps)
+        last_frame_time = time.time()
+        timeout_seconds = 10  # Stop if no new frames for 10 seconds
+        
+        try:
+            while True:
+                with camera_frames_lock:
+                    if camera_ip not in camera_frames or camera_frames[camera_ip] is None:
+                        no_frame_count += 1
+                        
+                        # Check if camera is still active
+                        with camera_lock:
+                            camera_active = camera_ip in active_cameras
+                        
+                        # If camera is not active or timeout reached, stop streaming
+                        if not camera_active or (time.time() - last_frame_time) > timeout_seconds:
+                            logging.info(f"Camera {camera_ip} inactive or timeout, stopping stream")
+                            break
+                        
+                        if no_frame_count >= max_no_frame_attempts:
+                            logging.info(f"No frames from camera {camera_ip} for extended period, stopping stream")
+                            break
+                        
+                        # Send placeholder frame
+                        placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
+                        cv2.putText(placeholder, f'Waiting for camera {camera_ip}...', 
+                                   (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                        frame = placeholder
+                    else:
+                        no_frame_count = 0
+                        last_frame_time = time.time()
+                        frame = camera_frames[camera_ip].copy()
                 
-            frame_bytes = buffer.tobytes()
-            
-            # Yield frame in multipart format
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                # Encode frame as JPEG
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if not ret:
+                    continue
+                    
+                frame_bytes = buffer.tobytes()
+                
+                # Yield frame in multipart format
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                
+                time.sleep(0.033)  # ~30 fps
+                
+        except GeneratorExit:
+            logging.info(f"Client disconnected from camera {camera_ip} stream")
+        except Exception as e:
+            logging.error(f"Error in generate_camera_frames for {camera_ip}: {str(e)}")
+        finally:
+            # Decrease connection count
+            with active_streams_lock:
+                if camera_ip in active_streams:
+                    active_streams[camera_ip] -= 1
+                    logging.info(f"Client disconnected from camera {camera_ip} (remaining: {active_streams[camera_ip]})")
+                    
+                    # Clean up if no more connections
+                    if active_streams[camera_ip] <= 0:
+                        del active_streams[camera_ip]
     
     return Response(generate_camera_frames(),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -282,6 +357,24 @@ def stop_camera():
                     'error': f'Failed to stop camera process: {str(e)}'
                 }), 500
                 
+    except Exception as e:
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/api/streams/active', methods=['GET'])
+def list_active_streams():
+    """List all active stream connections"""
+    try:
+        with active_streams_lock:
+            streams = [
+                {'camera_ip': ip, 'connections': count}
+                for ip, count in active_streams.items()
+            ]
+        
+        return jsonify({
+            'active_streams': streams,
+            'total_streams': len(streams),
+            'total_connections': sum(s['connections'] for s in streams)
+        }), 200
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
@@ -571,8 +664,8 @@ def get_detection_frame_image():
 
 
 if __name__ == '__main__':
-    # Register cleanup handler
-    register_cleanup_handler(active_cameras, camera_lock)
+    # Register cleanup handler with all consumers
+    register_cleanup_handler(active_cameras, camera_lock, camera_consumers, video_consumer)
     
     # Start Kafka consumer
     start_consumer_thread(video_consumer)
@@ -582,4 +675,7 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
     except KeyboardInterrupt:
         logging.info("Shutting down server...")
+        from service.StreamService import cleanup_consumers
+        cleanup_consumers(camera_consumers)
+        video_consumer.stop()
         cleanup_processes(active_cameras, camera_lock)
