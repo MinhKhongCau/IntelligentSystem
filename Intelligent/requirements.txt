@@ -19,6 +19,7 @@ kafka-python==2.0.2
 
 # Web Framework (for video streaming service)
 flask==3.0.0
+flask-cors==4.0.0
 
 # Image Processing
 Pillow==10.1.0

@@ -1,4 +1,5 @@
 from flask import Flask, Response, render_template, jsonify, request
+from flask_cors import CORS
 import cv2
 import numpy as np
 import json
@@ -9,9 +10,10 @@ import subprocess
 import os
 import time
 from video_consumer import VideoStreamConsumer
-from service.StreamService import start_consumer_thread, cleanup_processes
+from service.StreamService import start_consumer_thread, cleanup_processes, register_cleanup_handler
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 logging.basicConfig(level=logging.INFO)
 
 # Global variables for frame storage
@@ -23,14 +25,26 @@ KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9
 KAFKA_TOPIC = 'video-stream'
 
 # Global variables for camera management
-active_cameras = {}  # {ip: process}
+active_cameras = {}  # {ip: {'process': process, 'topic': topic}}
 camera_lock = Lock()
 
+# Global variables for multiple camera consumers
+camera_consumers = {}  # {ip: consumer}
+camera_frames = {}  # {ip: frame}
+camera_frames_lock = Lock()
+
 def update_frame(frame):
-    """Callback to update current frame"""
+    """Callback to update current frame (for default stream)"""
     global current_frame
     with frame_lock:
         current_frame = frame
+
+def create_camera_frame_callback(camera_ip):
+    """Create a callback function for a specific camera"""
+    def callback(frame):
+        with camera_frames_lock:
+            camera_frames[camera_ip] = frame
+    return callback
 
 # Initialize consumer with callback
 video_consumer = VideoStreamConsumer(KAFKA_TOPIC, KAFKA_BOOTSTRAP_SERVERS, frame_callback=update_frame)
@@ -68,8 +82,37 @@ def index_page():
 
 @app.route('/video_feed')
 def video_feed():
-    """Video streaming route"""
+    """Video streaming route (default stream)"""
     return Response(generate_frames(),
+                   mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed/<camera_ip>')
+def video_feed_by_camera(camera_ip):
+    """Video streaming route for specific camera"""
+    def generate_camera_frames():
+        while True:
+            with camera_frames_lock:
+                if camera_ip not in camera_frames or camera_frames[camera_ip] is None:
+                    # Send placeholder frame
+                    placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
+                    cv2.putText(placeholder, f'Waiting for camera {camera_ip}...', 
+                               (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                    frame = placeholder
+                else:
+                    frame = camera_frames[camera_ip].copy()
+            
+            # Encode frame as JPEG
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if not ret:
+                continue
+                
+            frame_bytes = buffer.tobytes()
+            
+            # Yield frame in multipart format
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+    
+    return Response(generate_camera_frames(),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/api/status')
@@ -111,7 +154,8 @@ def start_camera():
             if camera_ip in active_cameras:
                 return jsonify({
                     'message': f'Camera {camera_ip} is already running',
-                    'status': 'already_active'
+                    'status': 'already_active',
+                    'topic': active_cameras[camera_ip]['topic']
                 }), 200
             
             # Check if video file exists
@@ -124,13 +168,18 @@ def start_camera():
             
             # Start video producer process
             try:
-                print(f"Start {camera_ip} camera")
+                logging.info(f"Start {camera_ip} camera")
                 # Check if running in Docker
                 kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-                print(f"Kafka is running in {kafka_servers}")
+                logging.info(f"Kafka is running in {kafka_servers}")
+                
+                # Create topic name from camera IP
+                topic = f"camera-{camera_ip.replace('.', '-')}"
                 
                 process = subprocess.Popen([
-                    'python', 'video_producer.py', video_file, '--kafka-servers', kafka_servers
+                    'python', 'video_producer.py', video_file, 
+                    '--kafka-servers', kafka_servers,
+                    '--camera-ip', camera_ip
                 ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 
                 # Wait a moment to check if process started successfully
@@ -143,13 +192,32 @@ def start_camera():
                         'details': stderr.decode('utf-8') if stderr else 'Unknown error'
                     }), 500
                 
-                active_cameras[camera_ip] = process
+                # Store process and topic
+                active_cameras[camera_ip] = {
+                    'process': process,
+                    'topic': topic
+                }
+                
+                # Start consumer for this camera
+                consumer = VideoStreamConsumer(
+                    topic, 
+                    kafka_servers, 
+                    frame_callback=create_camera_frame_callback(camera_ip)
+                )
+                camera_consumers[camera_ip] = consumer
+                
+                # Start consumer in a separate thread
+                consumer_thread = Thread(target=consumer.start, daemon=True)
+                consumer_thread.start()
+                
+                logging.info(f"Started consumer for camera {camera_ip} on topic {topic}")
                 
                 return jsonify({
                     'message': f'Camera {camera_ip} started successfully',
                     'status': 'started',
                     'video_file': video_file,
-                    'process_id': process.pid
+                    'process_id': process.pid,
+                    'topic': topic
                 }), 200
                 
             except Exception as e:
@@ -177,9 +245,20 @@ def stop_camera():
                     'status': 'not_active'
                 }), 200
             
-            process = active_cameras[camera_ip]
+            camera_info = active_cameras[camera_ip]
+            process = camera_info['process']
             
             try:
+                # Stop consumer
+                if camera_ip in camera_consumers:
+                    camera_consumers[camera_ip].stop()
+                    del camera_consumers[camera_ip]
+                
+                # Remove frame
+                with camera_frames_lock:
+                    if camera_ip in camera_frames:
+                        del camera_frames[camera_ip]
+                
                 # Terminate the process
                 process.terminate()
                 
@@ -212,14 +291,18 @@ def list_cameras():
     try:
         with camera_lock:
             camera_list = []
-            for ip, process in active_cameras.items():
+            for ip, camera_info in active_cameras.items():
+                process = camera_info['process']
+                topic = camera_info['topic']
+                
                 # Check if process is still running
                 if process.poll() is None:
                     camera_list.append({
                         'ip': ip,
                         'status': 'running',
                         'process_id': process.pid,
-                        'video_file': f"{ip}.mp4"
+                        'video_file': f"{ip}.mp4",
+                        'topic': topic
                     })
                 else:
                     # Process has died, remove from active list
@@ -227,14 +310,18 @@ def list_cameras():
                         'ip': ip,
                         'status': 'stopped',
                         'process_id': process.pid,
-                        'video_file': f"{ip}.mp4"
+                        'video_file': f"{ip}.mp4",
+                        'topic': topic
                     })
             
             # Clean up dead processes
             active_cameras_copy = active_cameras.copy()
-            for ip, process in active_cameras_copy.items():
-                if process.poll() is not None:
+            for ip, camera_info in active_cameras_copy.items():
+                if camera_info['process'].poll() is not None:
                     del active_cameras[ip]
+                    if ip in camera_consumers:
+                        camera_consumers[ip].stop()
+                        del camera_consumers[ip]
             
             return jsonify({
                 'cameras': camera_list,
@@ -253,43 +340,240 @@ def camera_status(ip):
                 return jsonify({
                     'ip': ip,
                     'status': 'inactive',
-                    'video_file': f"{ip}.mp4",
-                    'file_exists': os.path.exists(f"{ip}.mp4")
+                    'video_file': f"video/{ip}.mp4",
+                    'file_exists': os.path.exists(f"video/{ip}.mp4")
                 }), 200
             
-            process = active_cameras[ip]
+            camera_info = active_cameras[ip]
+            process = camera_info['process']
+            topic = camera_info['topic']
+            
             if process.poll() is None:
                 return jsonify({
                     'ip': ip,
                     'status': 'running',
                     'process_id': process.pid,
-                    'video_file': f"{ip}.mp4",
-                    'file_exists': os.path.exists(f"{ip}.mp4")
+                    'video_file': f"video/{ip}.mp4",
+                    'file_exists': os.path.exists(f"video/{ip}.mp4"),
+                    'topic': topic
                 }), 200
             else:
                 # Process has died
                 del active_cameras[ip]
+                if ip in camera_consumers:
+                    camera_consumers[ip].stop()
+                    del camera_consumers[ip]
+                    
                 return jsonify({
                     'ip': ip,
                     'status': 'stopped',
                     'video_file': f"video/{ip}.mp4",
-                    'file_exists': os.path.exists(f"{ip}.mp4")
+                    'file_exists': os.path.exists(f"video/{ip}.mp4")
                 }), 200
                 
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
+@app.route('/api/search/person-in-video', methods=['POST'])
+def search_person_in_video():
+    """
+    Search for a person in video by uploaded image
+    
+    Request:
+        - image: uploaded image file (multipart/form-data)
+        - camera_ip: IP address of camera
+        - threshold: optional confidence threshold (default: 0.6)
+    
+    Response:
+        - detections: list of matches with frame_number, timestamp, confidence
+        - total_frames: total frames processed
+        - fps: video frame rate
+    """
+    try:
+        # Validate request
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file provided'}), 400
+        
+        if 'camera_ip' not in request.form:
+            return jsonify({'error': 'Camera IP is required'}), 400
+        
+        image_file = request.files['image']
+        camera_ip = request.form['camera_ip']
+        threshold = float(request.form.get('threshold', 0.6))
+        
+        # Validate image file
+        if image_file.filename == '':
+            return jsonify({'error': 'Empty image filename'}), 400
+        
+        # Validate IP format
+        ip_parts = camera_ip.split('.')
+        if len(ip_parts) != 4 or not all(part.isdigit() and 0 <= int(part) <= 255 for part in ip_parts):
+            return jsonify({'error': 'Invalid IP address format'}), 400
+        
+        # Check if video file exists
+        video_file = f"video/{camera_ip}.mp4"
+        if not os.path.exists(video_file):
+            return jsonify({
+                'error': f'Video file for camera {camera_ip} not found',
+                'suggestion': f'Please ensure video file {video_file} exists'
+            }), 404
+        
+        # Read and decode image
+        image_bytes = image_file.read()
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        uploaded_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if uploaded_image is None:
+            return jsonify({'error': 'Failed to decode image file'}), 400
+        
+        # Import untils for face recognition
+        import untils
+        
+        # Search for person in video
+        logging.info(f"Searching for person in camera {camera_ip} with threshold {threshold}")
+        result = untils.search_person_by_image_in_video(
+            uploaded_image=uploaded_image,
+            video_path=video_file,
+            threshold=threshold
+        )
+        
+        # Check for errors
+        if 'error' in result and result['error']:
+            if 'No face detected' in result['error']:
+                return jsonify({'error': result['error']}), 422
+            else:
+                return jsonify({'error': result['error']}), 500
+        
+        # Return results
+        return jsonify({
+            'success': True,
+            'camera_ip': camera_ip,
+            'threshold': threshold,
+            'detections': result.get('detections', []),
+            'total_detections': len(result.get('detections', [])),
+            'total_frames': result.get('total_frames', 0),
+            'fps': result.get('fps', 0)
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Invalid parameter value: {str(e)}'}), 400
+    except Exception as e:
+        logging.error(f"Error in person search: {str(e)}")
+        return jsonify({'error': 'Internal server error occurred'}), 500
+
+@app.route('/api/detection/frame-image', methods=['POST'])
+def get_detection_frame_image():
+    """
+    Get frame image with bounding box drawn
+    
+    Request (JSON):
+        - camera_ip: IP address of camera
+        - frame_number: frame number to extract
+        - bbox: bounding box coordinates {x, y, width, height}
+        - confidence: confidence score (optional, for display)
+    
+    Response:
+        - JPEG image with bounding box drawn
+    """
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data:
+            return jsonify({'error': 'Request body is required'}), 400
+        
+        camera_ip = data.get('camera_ip')
+        frame_number = data.get('frame_number')
+        bbox = data.get('bbox')
+        
+        if not camera_ip:
+            return jsonify({'error': 'camera_ip is required'}), 400
+        if frame_number is None:
+            return jsonify({'error': 'frame_number is required'}), 400
+        if not bbox:
+            return jsonify({'error': 'bbox is required'}), 400
+        
+        # Validate bbox structure
+        required_bbox_fields = ['x', 'y', 'width', 'height']
+        if not all(field in bbox for field in required_bbox_fields):
+            return jsonify({'error': f'bbox must contain: {", ".join(required_bbox_fields)}'}), 400
+        
+        # Validate IP format
+        ip_parts = camera_ip.split('.')
+        if len(ip_parts) != 4 or not all(part.isdigit() and 0 <= int(part) <= 255 for part in ip_parts):
+            return jsonify({'error': 'Invalid IP address format'}), 400
+        
+        # Check if video file exists
+        video_file = f"video/{camera_ip}.mp4"
+        if not os.path.exists(video_file):
+            return jsonify({
+                'error': f'Video file for camera {camera_ip} not found',
+                'suggestion': f'Please ensure video file {video_file} exists'
+            }), 404
+        
+        # Open video file
+        cap = cv2.VideoCapture(video_file)
+        if not cap.isOpened():
+            return jsonify({'error': 'Failed to open video file'}), 500
+        
+        # Set frame position
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+        
+        # Read frame
+        ret, frame = cap.read()
+        cap.release()
+        
+        if not ret or frame is None:
+            return jsonify({'error': f'Failed to read frame {frame_number}'}), 404
+        
+        # Extract bbox coordinates
+        x = int(bbox['x'])
+        y = int(bbox['y'])
+        width = int(bbox['width'])
+        height = int(bbox['height'])
+        
+        # Draw bounding box
+        color = (0, 255, 0)  # Green color in BGR
+        thickness = 2
+        cv2.rectangle(frame, (x, y), (x + width, y + height), color, thickness)
+        
+        # Add confidence text if provided
+        confidence = data.get('confidence')
+        if confidence is not None:
+            label = f"Confidence: {confidence:.2f}%"
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.6
+            font_thickness = 2
+            
+            # Get text size for background
+            (text_width, text_height), baseline = cv2.getTextSize(label, font, font_scale, font_thickness)
+            
+            # Draw background rectangle for text
+            cv2.rectangle(frame, (x, y - text_height - 10), (x + text_width, y), color, -1)
+            
+            # Draw text
+            cv2.putText(frame, label, (x, y - 5), font, font_scale, (0, 0, 0), font_thickness)
+        
+        # Encode frame as JPEG
+        ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        if not ret:
+            return jsonify({'error': 'Failed to encode image'}), 500
+        
+        # Return image
+        return Response(buffer.tobytes(), mimetype='image/jpeg')
+        
+    except ValueError as e:
+        return jsonify({'error': f'Invalid parameter value: {str(e)}'}), 400
+    except Exception as e:
+        logging.error(f"Error generating detection frame image: {str(e)}")
+        return jsonify({'error': 'Internal server error occurred'}), 500
 
 
-import atexit
-
-def cleanup_on_exit():
-    """Cleanup function for atexit"""
-    cleanup_processes(active_cameras, camera_lock)
-
-atexit.register(cleanup_on_exit)
 
 if __name__ == '__main__':
+    # Register cleanup handler
+    register_cleanup_handler(active_cameras, camera_lock)
+    
     # Start Kafka consumer
     start_consumer_thread(video_consumer)
     
