@@ -1,6 +1,7 @@
 package com.intelligent.missingperson.service;
 
 import com.intelligent.missingperson.dto.MissingDocumentResponseDTO;
+import com.intelligent.missingperson.dto.VolunteerReportDTO;
 import com.intelligent.missingperson.dto.AreaDTO;
 import com.intelligent.missingperson.dto.MissingDocumentRequest;
 import com.intelligent.missingperson.entity.Area;
@@ -14,7 +15,12 @@ import com.intelligent.missingperson.repository.VolunteerSubcriptionRepository;
 import com.intelligent.missingperson.until.CaseStatus;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -172,7 +178,7 @@ public class MissingDocumentService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    private com.intelligent.missingperson.dto.VolunteerReportDTO convertReportToDTO(VolunteerReport report) {
+    private VolunteerReportDTO convertReportToDTO(VolunteerReport report) {
         com.intelligent.missingperson.dto.AreaDTO areaDTO = null;
         if (report.getSightingArea() != null) {
             areaDTO = com.intelligent.missingperson.dto.AreaDTO.builder()
@@ -240,4 +246,37 @@ public class MissingDocumentService {
             .build();
             
 	}
+
+    public void addPersonToChromaDB(Integer personId, String name, String imageUrl) throws Exception {
+        String flaskUrl = System.getenv().getOrDefault("FLASK_SERVICE_URL", "http://localhost:5001");
+        String apiUrl = flaskUrl + "/api/add-chroma";
+        
+        // Create JSON request
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        // Build request body as JSON
+        java.util.Map<String, Object> requestBody = new java.util.HashMap<>();
+        requestBody.put("person_id", personId.toString());
+        requestBody.put("name", name);
+        requestBody.put("image_url", imageUrl);
+        
+        // Add metadata
+        java.util.Map<String, String> metadata = new java.util.HashMap<>();
+        metadata.put("name", name);
+        metadata.put("person_id", personId.toString());
+        requestBody.put("metadata", metadata);
+        
+        HttpEntity<java.util.Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+        
+        // Send request
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
+        
+        if (response.getStatusCode().is2xxSuccessful()) {
+            System.out.println("✓ Successfully added person " + personId + " to ChromaDB");
+        } else {
+            System.err.println("✗ Failed to add person to ChromaDB: " + response.getBody());
+        }
+    }
 }

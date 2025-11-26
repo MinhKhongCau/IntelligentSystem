@@ -227,6 +227,19 @@ public class MissingDocumentController {
                     .build();
 
             MissingDocument saved = missingDocumentService.save(missingDocument);
+            
+            // Add person to ChromaDB via Flask API
+            try {
+                missingDocumentService.addPersonToChromaDB(
+                    saved.getId(), 
+                    saved.getFullName(), 
+                    saved.getFacePictureUrl()
+                );
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to add person to ChromaDB: " + e.getMessage());
+                // Don't fail the request if ChromaDB addition fails
+            }
+            
             return ResponseEntity.status(201).body(saved);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error creating missing person: " + e.getMessage());

@@ -1,5 +1,5 @@
 class IdentityResult:
-    """Chứa kết quả dự đoán định danh cho một khuôn mặt."""
+    """Store result for identity face predtiction."""
     def __init__(self, face_data, ids, person_name, document):
         self.face = face_data
         self.ids = ids
@@ -7,7 +7,7 @@ class IdentityResult:
         self.document = document
 
     def to_dict(self):
-        """Chuyển đổi kết quả dự đoán thành dictionary theo format mong muốn."""
+        """Evaluating result prediction to dictionary follow format."""
         return {
             "face": self.face.to_dict(),
             "ids": self.ids[0], 

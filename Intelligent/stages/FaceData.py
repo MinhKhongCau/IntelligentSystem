@@ -7,7 +7,7 @@ class FaceData:
         self.distance = distance
 
     def to_dict(self):
-        """Chuyển đổi dữ liệu khuôn mặt thành dictionary."""
+        """Evaluating face data to dictionary."""
         return {
             "x": self.x,
             "y": self.y,

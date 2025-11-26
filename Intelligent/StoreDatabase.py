@@ -16,7 +16,7 @@ except AttributeError:
     print('Not found chromadb.Client`')
     exit()
 
-collection, _ = untils.load_chroma_database(DB_PATH='chromadb')
+collection, _ = untils.load_chroma_database(DB_PATH='chromadb_centroid')
 
 
 def init_dataset():

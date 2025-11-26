@@ -6,8 +6,7 @@ import os
 from mtcnn import MTCNN
 
 # Add parent directory to path for importing untils
-# sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from untils import untils
+from Intelligent.untils import untils
 
 # --- Init data ---
 

@@ -1,16 +1,19 @@
-from flask import Flask, Response, render_template, jsonify, request
-from flask_cors import CORS
 import cv2
 import numpy as np
 import json
 import base64
-from threading import Thread, Lock
 import logging
 import subprocess
 import os
 import time
+import utils
+
 from video_consumer import VideoStreamConsumer
 from service.StreamService import start_consumer_thread, cleanup_processes, register_cleanup_handler
+from flask import Flask, Response, render_template, jsonify, request
+from flask_cors import CORS
+from threading import Thread, Lock
+from mtcnn import MTCNN
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -44,6 +47,18 @@ camera_frames_lock = Lock()
 # Track active stream connections
 active_streams = {}  # {camera_ip: connection_count}
 active_streams_lock = Lock()
+
+# Load model, database and detector (global resources)
+try:
+    INFER = untils.load_model()
+    COLLECTION, CHROMA_CLIENT = untils.load_chroma_database(DB_PATH='chromadb_centroid')
+    DETECTOR = MTCNN()
+    print("Tải mô hình và database thành công.")
+except Exception as e:
+    print(f"Lỗi khi tải tài nguyên chính: {e}")
+    INFER = None
+    COLLECTION = None
+    DETECTOR = None
 
 def update_frame(frame):
     """Callback to update current frame (for default stream)"""
@@ -519,9 +534,6 @@ def search_person_in_video():
         if uploaded_image is None:
             return jsonify({'error': 'Failed to decode image file'}), 400
         
-        # Import untils for face recognition
-        import untils
-        
         # Search for person in video
         logging.info(f"Searching for person in camera {camera_ip} with threshold {threshold}")
         result = untils.search_person_by_image_in_video(
@@ -659,6 +671,245 @@ def get_detection_frame_image():
         return jsonify({'error': f'Invalid parameter value: {str(e)}'}), 400
     except Exception as e:
         logging.error(f"Error generating detection frame image: {str(e)}")
+        return jsonify({'error': 'Internal server error occurred'}), 500
+
+@app.route('/api/compare-faces', methods=['POST'])
+def compare_two_faces():
+    """
+    Compare two face images and calculate similarity
+    
+    Request (multipart/form-data):
+        - image1: first face image file (required)
+        - image2: second face image file (required)
+        - threshold: optional distance threshold (default: 0.6)
+    
+    Response:
+        - distance: L2 distance between embeddings
+        - similarity: similarity percentage (0-100%)
+        - is_match: boolean indicating if faces match
+        - threshold: threshold used for comparison
+    """
+    try:
+        # Validate request
+        if 'image1' not in request.files:
+            return jsonify({'error': 'image1 is required'}), 400
+        
+        if 'image2' not in request.files:
+            return jsonify({'error': 'image2 is required'}), 400
+        
+        image1_file = request.files['image1']
+        image2_file = request.files['image2']
+        threshold = float(request.form.get('threshold', 0.6)) or 0.5
+        
+        # Validate image files
+        if image1_file.filename == '':
+            return jsonify({'error': 'Empty image1 filename'}), 400
+        
+        if image2_file.filename == '':
+            return jsonify({'error': 'Empty image2 filename'}), 400
+        
+        # Read and decode images
+        image1_bytes = image1_file.read()
+        image2_bytes = image2_file.read()
+        
+        nparr1 = np.frombuffer(image1_bytes, np.uint8)
+        nparr2 = np.frombuffer(image2_bytes, np.uint8)
+        
+        image1 = cv2.imdecode(nparr1, cv2.IMREAD_COLOR)
+        image2 = cv2.imdecode(nparr2, cv2.IMREAD_COLOR)
+        
+        if image1 is None:
+            return jsonify({'error': 'Failed to decode image1'}), 400
+        
+        if image2 is None:
+            return jsonify({'error': 'Failed to decode image2'}), 400
+        
+        # Detect faces
+        logging.info("Detecting faces in both images...")
+        faces1 = DETECTOR.detect_faces(image1)
+        faces2 = DETECTOR.detect_faces(image2)
+        
+        if not faces1:
+            return jsonify({'error': 'No face detected in image1'}), 422
+        
+        if not faces2:
+            return jsonify({'error': 'No face detected in image2'}), 422
+        
+        # Get first face from each image
+        bbox1 = faces1[0]['box']
+        bbox2 = faces2[0]['box']
+        
+        # Crop faces
+        face1 = utils.crop_face(image1, bbox1)
+        face2 = utils.crop_face(image2, bbox2)
+        
+        # Preprocess faces
+        logging.info("Preprocessing faces...")
+        face1_preprocessed = utils.preprocess_img(face1)
+        face2_preprocessed = utils.preprocess_img(face2)
+        
+        # Generate embeddings
+        logging.info("Generating embeddings...")
+        embedding1 = utils.image_to_embedding(face1_preprocessed, INFER)
+        embedding2 = utils.image_to_embedding(face2_preprocessed, INFER)
+        
+        # Calculate distance
+        logging.info("Calculating distance...")
+        distance = utils.cal_embeddings_dist(embedding1, embedding2)
+        
+        # Calculate similarity percentage
+        similarity = (1 - distance) * 100
+        
+        # Determine if match
+        is_match = distance < threshold
+        
+        # Return results
+        return jsonify({
+            'success': True,
+            'distance': float(distance),
+            'similarity': float(similarity),
+            'is_match': is_match,
+            'threshold': threshold,
+            'bbox1': {
+                'x': int(bbox1[0]),
+                'y': int(bbox1[1]),
+                'width': int(bbox1[2]),
+                'height': int(bbox1[3])
+            },
+            'bbox2': {
+                'x': int(bbox2[0]),
+                'y': int(bbox2[1]),
+                'width': int(bbox2[2]),
+                'height': int(bbox2[3])
+            },
+            'embedding_dimension': embedding1.shape[0] if hasattr(embedding1, 'shape') else len(embedding1)
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Invalid parameter value: {str(e)}'}), 400
+    except Exception as e:
+        logging.error(f"Error comparing faces: {str(e)}")
+        return jsonify({'error': 'Internal server error occurred'}), 500
+
+
+@app.route('/api/add-chroma', methods=['POST'])
+def add_person_to_chroma():
+    """
+    Add a person's face embedding to ChromaDB
+    
+    Request (JSON):
+        - person_id: unique identifier for the person (required)
+        - name: person's full name (required)
+        - image_url: URL to face image (required)
+        - metadata: optional object with additional metadata
+    
+    Response:
+        - success: boolean indicating if operation succeeded
+        - person_id: the ID of the added person
+        - message: status message
+    """
+    try:
+        # Get JSON data
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Request body is required'}), 400
+        
+        # Validate required fields
+        if 'person_id' not in data:
+            return jsonify({'error': 'person_id is required'}), 400
+        
+        if 'name' not in data:
+            return jsonify({'error': 'name is required'}), 400
+        
+        if 'image_url' not in data:
+            return jsonify({'error': 'image_url is required'}), 400
+        
+        person_id = data['person_id']
+        name = data['name']
+        image_url = data['image_url']
+        
+        # Validate image URL
+        if not image_url or not isinstance(image_url, str):
+            return jsonify({'error': 'Invalid image_url'}), 400
+        
+        # Download image from URL
+        logging.info(f"Downloading image from URL: {image_url}")
+        try:
+            import requests
+            
+            # Determine if it's a local file path or URL
+            if image_url.startswith('http://') or image_url.startswith('https://'):
+                # Download from URL
+                response = requests.get(image_url, timeout=10)
+                if response.status_code != 200:
+                    return jsonify({'error': f'Failed to download image from URL: HTTP {response.status_code}'}), 400
+                image_bytes = response.content
+            else:
+                # Local file path (relative to backend uploads directory)
+                # Construct full path
+                backend_base_url = os.getenv('BACKEND_BASE_URL', 'http://localhost:8080')
+                full_url = f"{backend_base_url}{image_url}"
+                
+                logging.info(f"Fetching image from backend: {full_url}")
+                response = requests.get(full_url, timeout=10)
+                if response.status_code != 200:
+                    return jsonify({'error': f'Failed to fetch image from backend: HTTP {response.status_code}'}), 400
+                image_bytes = response.content
+            
+            # Decode image
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            uploaded_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if uploaded_image is None:
+                return jsonify({'error': 'Failed to decode image from URL'}), 400
+                
+        except requests.exceptions.Timeout:
+            return jsonify({'error': 'Timeout while downloading image'}), 408
+        except requests.exceptions.RequestException as e:
+            return jsonify({'error': f'Failed to download image: {str(e)}'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Error processing image: {str(e)}'}), 400
+        
+        # Parse optional metadata
+        metadata = data.get('metadata', {})
+        if not isinstance(metadata, dict):
+            metadata = {}
+        
+        # Add name to metadata
+        metadata['name'] = name
+        
+        # Add person to ChromaDB
+        logging.info(f"Adding person {name} (ID: {person_id}) to ChromaDB")
+        result = untils.add_person_to_chroma(
+            person_id=str(person_id),
+            face_image=uploaded_image,
+            metadata=metadata,
+            infer=INFER,
+            collection=COLLECTION,
+            detector=DETECTOR
+        )
+        
+        # Check for errors
+        if 'error' in result and result['error']:
+            if 'No face detected' in result['error']:
+                return jsonify({'error': result['error']}), 422
+            else:
+                return jsonify({'error': result['error']}), 500
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'person_id': person_id,
+            'name': name,
+            'message': f'Successfully added {name} to ChromaDB',
+            'embedding_dimension': result.get('embedding_dimension', 128)
+        }), 201
+        
+    except ValueError as e:
+        return jsonify({'error': f'Invalid parameter value: {str(e)}'}), 400
+    except Exception as e:
+        logging.error(f"Error adding person to ChromaDB: {str(e)}")
         return jsonify({'error': 'Internal server error occurred'}), 500
 
 
