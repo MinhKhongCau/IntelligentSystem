@@ -3,8 +3,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const PoliceDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, roles } = useAuth();
   const navigate = useNavigate();
+  const isCarePartner = roles.includes('CARE_PARTNER');
+
 
   const handleLogout = async () => {
     await logout();
@@ -94,6 +96,31 @@ const PoliceDashboard = () => {
               CCTV Monitor
             </button>
           </div>
+          {isCarePartner ? (
+            <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+              <h3 className="mb-3 text-2xl font-semibold text-gray-800">Report Missing Person</h3>
+              <p className="mb-5 text-base leading-relaxed text-gray-600">Submit a new missing person report</p>
+              <button 
+                onClick={() => navigate('/formmissing')}
+                className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
+              >
+                Submit Report
+              </button>
+            </div>
+          ) : (
+            <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+              <h3 className="mb-3 text-2xl font-semibold text-gray-800">Report Missing Person</h3>
+              <p className="mb-5 text-base leading-relaxed text-gray-600">You must be a care partner to submit a report</p>
+              <button 
+                className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-not-allowed bg-gray-400 shadow-none"
+                onClick={() => navigate('/formmissing')}
+                disabled
+              >
+                Submit a report
+              </button>
+            </div>
+            )
+          }
         </div>
       </div>
     </div>

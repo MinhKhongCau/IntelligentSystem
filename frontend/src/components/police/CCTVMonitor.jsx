@@ -163,31 +163,62 @@ const CCTVMonitor = () => {
       const results = response.data;
       
       // Fetch frame images with bounding boxes for each detection
+      // Group detections by frame_number to draw all faces on the same frame
       if (results.detections && results.detections.length > 0) {
-        const detectionsWithImages = await Promise.all(
-          results.detections.map(async (detection) => {
+        // Group detections by frame_number
+        const detectionsByFrame = results.detections.reduce((acc, detection) => {
+          const frameNum = detection.frame_number;
+          if (!acc[frameNum]) {
+            acc[frameNum] = [];
+          }
+          acc[frameNum].push(detection);
+          return acc;
+        }, {});
+        
+        // Fetch images for each unique frame with all faces
+        const frameNumbers = Object.keys(detectionsByFrame);
+        const frameImages = await Promise.all(
+          frameNumbers.map(async (frameNum) => {
+            const detectionsInFrame = detectionsByFrame[frameNum];
+            
             try {
+              // Prepare faces array for this frame
+              const faces = detectionsInFrame.map(det => ({
+                bbox: det.bbox,
+                confidence: det.confidence,
+                label: selectedMissingPerson ? selectedMissingPerson.name : undefined
+              }));
+              
               const imageResponse = await axios.post(
                 `${VIDEO_STREAM_URL}/api/detection/frame-image`,
                 {
                   camera_ip: searchCameraIp,
-                  frame_number: detection.frame_number,
-                  bbox: detection.bbox,
-                  confidence: detection.confidence
+                  frame_number: parseInt(frameNum),
+                  faces: faces
                 },
                 { responseType: 'blob' }
               );
               
               const imageUrl = URL.createObjectURL(imageResponse.data);
-              return { ...detection, imageUrl };
+              return { frameNum: parseInt(frameNum), imageUrl };
             } catch (error) {
-              console.error(`Failed to fetch image for frame ${detection.frame_number}:`, error);
-              return { ...detection, imageUrl: null };
+              console.error(`Failed to fetch image for frame ${frameNum}:`, error);
+              return { frameNum: parseInt(frameNum), imageUrl: null };
             }
           })
         );
         
-        results.detections = detectionsWithImages;
+        // Create a map of frame_number to imageUrl
+        const frameImageMap = {};
+        frameImages.forEach(({ frameNum, imageUrl }) => {
+          frameImageMap[frameNum] = imageUrl;
+        });
+        
+        // Add imageUrl to each detection
+        results.detections = results.detections.map(detection => ({
+          ...detection,
+          imageUrl: frameImageMap[detection.frame_number]
+        }));
       }
       
       setSearchResults(results);
