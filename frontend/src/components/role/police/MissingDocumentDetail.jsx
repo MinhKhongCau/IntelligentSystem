@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import FaceComparisonModal from './FaceComparisonModal';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -11,6 +12,11 @@ const MissingDocumentDetail = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [comparisonModal, setComparisonModal] = useState({
+    isOpen: false,
+    reportImage: null,
+    reportId: null
+  });
 
   useEffect(() => {
     fetchDocumentAndReports();
@@ -257,6 +263,20 @@ const MissingDocumentDetail = () => {
                         )}
                       </div>
                     )}
+
+                    {/* Compare Faces Button */}
+                    {report.sightingPicture && (
+                      <button
+                        onClick={() => setComparisonModal({
+                          isOpen: true,
+                          reportImage: report.sightingPicture,
+                          reportId: report.id
+                        })}
+                        className="w-full mt-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm"
+                      >
+                        🔍 Compare Faces
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -264,6 +284,16 @@ const MissingDocumentDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Face Comparison Modal */}
+      <FaceComparisonModal
+        isOpen={comparisonModal.isOpen}
+        onClose={() => setComparisonModal({ isOpen: false, reportImage: null, reportId: null })}
+        missingPersonImage={document?.facePictureUrl}
+        reportImage={comparisonModal.reportImage}
+        missingPersonName={document?.name}
+        reportId={comparisonModal.reportId}
+      />
     </div>
   );
 };

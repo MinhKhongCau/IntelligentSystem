@@ -6,7 +6,7 @@ import logging
 import subprocess
 import os
 import time
-import utils
+from utils import utils
 
 from video_consumer import VideoStreamConsumer
 from service.StreamService import start_consumer_thread, cleanup_processes, register_cleanup_handler
@@ -50,8 +50,8 @@ active_streams_lock = Lock()
 
 # Load model, database and detector (global resources)
 try:
-    INFER = untils.load_model()
-    COLLECTION, CHROMA_CLIENT = untils.load_chroma_database(DB_PATH='chromadb_centroid')
+    INFER = utils.load_model()
+    COLLECTION, CHROMA_CLIENT = utils.load_chroma_database(DB_PATH='chromadb_centroid')
     DETECTOR = MTCNN()
     print("Tải mô hình và database thành công.")
 except Exception as e:
@@ -536,7 +536,7 @@ def search_person_in_video():
         
         # Search for person in video
         logging.info(f"Searching for person in camera {camera_ip} with threshold {threshold}")
-        result = untils.search_person_by_image_in_video(
+        result = utils.search_person_by_image_in_video(
             uploaded_image=uploaded_image,
             video_path=video_file,
             threshold=threshold
@@ -752,23 +752,26 @@ def compare_two_faces():
         logging.info("Generating embeddings...")
         embedding1 = utils.image_to_embedding(face1_preprocessed, INFER)
         embedding2 = utils.image_to_embedding(face2_preprocessed, INFER)
+        embedding1 = embedding1.flatten()
+        embedding2 = embedding2.flatten()
         
         # Calculate distance
         logging.info("Calculating distance...")
-        distance = utils.cal_embeddings_dist(embedding1, embedding2)
+        distance = utils.cosine_similarity_numpy(embedding1, embedding2)
         
+        # Distance around -1 - 1
         # Calculate similarity percentage
-        similarity = (1 - distance) * 100
+        similarity = (distance+1)/2 * 100
         
         # Determine if match
-        is_match = distance < threshold
+        is_match = distance > threshold
         
         # Return results
         return jsonify({
             'success': True,
             'distance': float(distance),
             'similarity': float(similarity),
-            'is_match': is_match,
+            'is_match': bool(is_match),
             'threshold': threshold,
             'bbox1': {
                 'x': int(bbox1[0]),
@@ -782,7 +785,7 @@ def compare_two_faces():
                 'width': int(bbox2[2]),
                 'height': int(bbox2[3])
             },
-            'embedding_dimension': embedding1.shape[0] if hasattr(embedding1, 'shape') else len(embedding1)
+            'embedding_dimension': int(embedding1.shape[0]) if hasattr(embedding1, 'shape') else len(embedding1)
         }), 200
         
     except ValueError as e:
@@ -881,7 +884,7 @@ def add_person_to_chroma():
         
         # Add person to ChromaDB
         logging.info(f"Adding person {name} (ID: {person_id}) to ChromaDB")
-        result = untils.add_person_to_chroma(
+        result = utils.add_person_to_chroma(
             person_id=str(person_id),
             face_image=uploaded_image,
             metadata=metadata,
