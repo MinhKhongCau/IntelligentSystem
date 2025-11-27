@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './Logout.css';
 
 const Logout = () => {
   const navigate = useNavigate();
@@ -37,22 +36,34 @@ const Logout = () => {
   }, [navigate]);
 
   return (
-    <div className="logout-container">
-      <div className="logout-card">
-        <div className="logout-icon">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-700 p-5">
+      <div className="bg-white p-10 rounded-2xl shadow-2xl text-center max-w-md w-full animate-[fadeIn_0.5s_ease-out]">
+        <div className="mb-5 text-indigo-500 flex justify-center">
+          <svg 
+            width="64" 
+            height="64" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2"
+            className="animate-[pulse_2s_infinite]"
+          >
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16,17 21,12 16,7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
         </div>
         
-        <h2>Logging Out</h2>
-        <p>You have been successfully logged out.</p>
-        <p>Redirecting to login page...</p>
+        <h2 className="text-gray-800 text-3xl font-bold mb-4">Logging Out</h2>
+        <p className="text-gray-500 text-base mb-3 leading-relaxed">
+          You have been successfully logged out.
+        </p>
+        <p className="text-gray-500 text-base mb-3 leading-relaxed">
+          Redirecting to login page...
+        </p>
         
-        <div className="logout-spinner">
-          <div className="spinner"></div>
+        <div className="mt-8 flex justify-center">
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-indigo-500 rounded-full animate-spin"></div>
         </div>
       </div>
     </div>

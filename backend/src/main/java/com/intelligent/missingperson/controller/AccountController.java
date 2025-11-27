@@ -1,6 +1,7 @@
 package com.intelligent.missingperson.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,5 +94,137 @@ public class AccountController {
             return ResponseEntity.ok(updatedAccount);
         }
         return ResponseEntity.status(403).build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAccount(
+        Authentication authentication,
+        @PathVariable Integer id,
+        @org.springframework.web.bind.annotation.RequestBody AccountDTO accountDTO) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
+        String currentUsername = authentication.getName();
+        Optional<Account> currentAccountOpt = accountService.findByUsername(currentUsername);
+        
+        if (currentAccountOpt.isEmpty()) {
+            return ResponseEntity.status(401).body("User not found");
+        }
+
+        Account currentAccount = currentAccountOpt.get();
+        
+        // Check if user is updating their own account or is a police officer
+        boolean isOwnAccount = currentAccount.getId().equals(id);
+        boolean isPolice = policeService.existsById(currentAccount.getId());
+        
+        if (!isOwnAccount && !isPolice) {
+            return ResponseEntity.status(403).body("Access denied");
+        }
+
+        try {
+            Account accountToUpdate = accountService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+
+            // Update fields
+            if (accountDTO.getUsername() != null) {
+                accountToUpdate.setUsername(accountDTO.getUsername());
+            }
+            if (accountDTO.getEmail() != null) {
+                accountToUpdate.setEmail(accountDTO.getEmail());
+            }
+            if (accountDTO.getFullName() != null) {
+                accountToUpdate.setFullName(accountDTO.getFullName());
+            }
+            if (accountDTO.getPhone() != null) {
+                accountToUpdate.setPhone(accountDTO.getPhone());
+            }
+            if (accountDTO.getBirthday() != null) {
+                accountToUpdate.setBirthday(accountDTO.getBirthday());
+            }
+            if (accountDTO.getAddress() != null) {
+                accountToUpdate.setAddress(accountDTO.getAddress());
+            }
+            if (accountDTO.getGender() != null) {
+                accountToUpdate.setGender(accountDTO.getGender());
+            }
+            if (accountDTO.getProfilePictureUrl() != null) {
+                accountToUpdate.setProfilePictureUrl(accountDTO.getProfilePictureUrl());
+            }
+
+            Account updatedAccount = accountService.updateProfile(id ,accountToUpdate);
+            
+            // Return DTO without password
+            AccountDTO responseDTO = AccountDTO.builder()
+                    .id(updatedAccount.getId())
+                    .username(updatedAccount.getUsername())
+                    .email(updatedAccount.getEmail())
+                    .fullName(updatedAccount.getFullName())
+                    .birthday(updatedAccount.getBirthday())
+                    .address(updatedAccount.getAddress())
+                    .gender(updatedAccount.getGender())
+                    .phone(updatedAccount.getPhone())
+                    .profilePictureUrl(updatedAccount.getProfilePictureUrl())
+                    .accountType(updatedAccount.getAccountType())
+                    .build();
+            
+            return ResponseEntity.ok(responseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating account: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> changePassword(
+        Authentication authentication,
+        @PathVariable Integer id,
+        @org.springframework.web.bind.annotation.RequestBody Map<String, String> passwordData) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body("Authentication required");
+        }
+
+        String currentUsername = authentication.getName();
+        Optional<Account> currentAccountOpt = accountService.findByUsername(currentUsername);
+        
+        if (currentAccountOpt.isEmpty()) {
+            return ResponseEntity.status(401).body("User not found");
+        }
+
+        Account currentAccount = currentAccountOpt.get();
+        
+        // Only allow users to change their own password
+        if (!currentAccount.getId().equals(id)) {
+            return ResponseEntity.status(403).body("You can only change your own password");
+        }
+
+        String currentPassword = passwordData.get("currentPassword");
+        String newPassword = passwordData.get("newPassword");
+
+        if (currentPassword == null || newPassword == null) {
+            return ResponseEntity.status(400).body("Current password and new password are required");
+        }
+
+        try {
+            Account account = accountService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+
+            // Verify current password
+            org.springframework.security.crypto.password.PasswordEncoder encoder = 
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+            
+            if (!encoder.matches(currentPassword, account.getPassword())) {
+                return ResponseEntity.status(400).body("Current password is incorrect");
+            }
+
+            // Update password
+            account.setPassword(newPassword); // Will be encoded in save method
+            accountService.save(account);
+            
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error changing password: " + e.getMessage());
+        }
     }
 }

@@ -1,5 +1,5 @@
 import react from "react";
-import Navbar from "../navbar/Navbar";
+import Navbar from "../auth/Navbar";
 import heroimg from "./heroimagefinal.png"
 const Index = () => {
    

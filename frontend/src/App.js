@@ -1,21 +1,23 @@
-
-import MissingList from './components/find_loc/MissingList';
-// import SearchButton from './components/find_loc/SearchButton';
-import Formmissing from './components/missing-form/Formmissing';
-import Navbar from './components/Navbar';
-import Missing_persons from './components/view-missing/Missing_persons';
-import Hero from './components/Hero/Hero';
-import Login from './components/auth/Login';
-import Logout from './components/auth/Logout';
-import Dashboard from './components/dashboard/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './contexts/AuthContext';
-import Register from './components/auth/Register';
 import {
   BrowserRouter as Router,
   Route,
   Routes,
 } from "react-router-dom";
+
+import { AuthProvider } from './contexts/AuthContext';
+import MissingList from './components/find-loc/MissingList';
+// import SearchButton from './components/find_loc/SearchButton';
+import Formmissing from './components/missing-form/Formmissing';
+import Navbar from './components/auth/Navbar';
+import Missing_persons from './components/view-missing/Missing_persons';
+import Hero from './components/Hero/Hero';
+import Login from './components/auth/Login';
+import Logout from './components/auth/Logout';
+import Dashboard from './components/dashboard/Dashboard';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import Register from './components/auth/Register';
+import Profile from './components/auth/Profile';
+import EditProfile from './components/auth/EditProfile';
 import AddMissingArea from './components/missing-form/AddmissingArea';
 import RegisterCarePartner from './components/carePartner/RegisterCarePartner';
 import PoliceDashboard from './components/dashboard/PoliceDashboard';
@@ -42,6 +44,16 @@ function App() {
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard/>
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile/>
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/edit" element={
+              <ProtectedRoute>
+                <EditProfile/>
               </ProtectedRoute>
             } />
             <Route path="/formmissing" element={

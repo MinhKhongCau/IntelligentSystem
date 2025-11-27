@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
-  const { login, loading, setLoading } = useAuth();
+  const { login, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -54,18 +53,24 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <h2>Welcome Back</h2>
-          <p>Sign in to your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-700 p-5 animate-[slideUp_0.5s_ease-out]">
+      <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="text-center mb-8">
+          <h2 className="text-gray-800 text-3xl font-bold mb-2">Welcome Back</h2>
+          <p className="text-gray-500 text-base">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit} className="mb-5">
+          {error && (
+            <div className="bg-red-100 text-red-700 px-3 py-3 rounded-lg mb-5 text-sm text-center">
+              {error}
+            </div>
+          )}
           
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
+          <div className="mb-5">
+            <label htmlFor="username" className="block mb-2 text-gray-800 font-medium text-sm">
+              Username
+            </label>
             <input
               type="text"
               id="username"
@@ -74,11 +79,14 @@ const Login = () => {
               onChange={handleChange}
               required
               placeholder="Enter your username"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div className="mb-5">
+            <label htmlFor="password" className="block mb-2 text-gray-800 font-medium text-sm">
+              Password
+            </label>
             <input
               type="password"
               id="password"
@@ -87,20 +95,26 @@ const Login = () => {
               onChange={handleChange}
               required
               placeholder="Enter your password"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
             />
           </div>
 
           <button 
             type="submit" 
-            className="login-button"
+            className="w-full py-3 px-5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-none rounded-lg text-base font-semibold cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-indigo-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="login-footer">
-          <p>Don't have an account? <a href="/register">Sign up</a></p>
+        <div className="text-center mt-5">
+          <p className="text-gray-500 text-sm">
+            Don't have an account?{' '}
+            <a href="/register" className="text-indigo-500 no-underline font-medium hover:underline">
+              Sign up
+            </a>
+          </p>
         </div>
       </div>
     </div>
