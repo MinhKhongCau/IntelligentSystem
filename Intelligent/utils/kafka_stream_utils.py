@@ -238,6 +238,7 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
     """
     Search for a person in video by comparing with uploaded image using ChromaDB
     Optimized: Only reads 1 frame every 3 seconds
+    Returns full identity information including person_id and metadata
     """
     collection, _ = load_chroma_database()
     infer = load_model()
@@ -298,9 +299,22 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
                 distance = results['distances'][0][0]
                 
                 # Check if match
-                if distance < threshold:
-                    confidence = (1 - distance) * 100
-                    # Store full detection information
+                if distance > threshold:
+                    confidence = (2-distance) / 2 * 100
+                    
+                    # Extract identity information from ChromaDB results
+                    person_id = None
+                    person_name = None
+                    metadata = {}
+                    
+                    if results.get('ids') and len(results['ids'][0]) > 0:
+                        person_id = results['ids'][0][0]
+                    
+                    if results.get('metadatas') and len(results['metadatas'][0]) > 0:
+                        metadata = results['metadatas'][0][0]
+                        person_name = metadata.get('person_name') or metadata.get('name')
+                    
+                    # Store full detection information with identity
                     detection = {
                         'frame_number': frame_number,
                         'timestamp': round(timestamp, 2),
@@ -311,11 +325,16 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
                             'y': int(y),
                             'width': int(w),
                             'height': int(h)
+                        },
+                        'identity': {
+                            'person_id': person_id,
+                            'person_name': person_name,
+                            'metadata': metadata
                         }
                     }
                     detections.append(detection)
-                    print(f"✓ [{timestamp:.1f}s] Frame {frame_number} - Match! Confidence: {confidence:.2f}%")
-                    break  # Only need one match per frame
+                    print(f"✓ [{timestamp:.1f}s] Frame {frame_number} - Match! Person: {person_name or person_id}, Confidence: {confidence:.2f}%")
+                    # break  # Only need one match per frame
         
         # Progress indicator
         if (idx + 1) % 10 == 0 or (idx + 1) == len(frames_to_process):

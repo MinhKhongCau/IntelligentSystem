@@ -5,9 +5,9 @@ import sys
 import os
 from mtcnn import MTCNN
 
-# Add parent directory to path for importing untils
+# Add parent directory to path for importing utils
 # sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from untils import untils
+from utils import utils
 
 # --- Init data ---
 
@@ -32,10 +32,10 @@ image = plt.imread(face_path)
 # --- Predict ---
 
 # Calling predict funtion
-collection, _ = untils.load_chroma_database(DB_PATH='chromadb')
-infer = untils.load_model()
+collection, _ = utils.load_chroma_database(DB_PATH='chromadb')
+infer = utils.load_model()
 detector = MTCNN()
-result = untils.predict_identity_from_image(collection=collection, infer=infer, image=image, detector=detector)
+result = utils.predict_identity_from_image(collection=collection, infer=infer, image=image, detector=detector)
 print(result)
 # --- Evaluating result and draw retacgle ---
 
@@ -68,7 +68,7 @@ for rel in result:
         print("Bounding box data is missing or incomplete. Skipping this face.")
         continue
 
-    distance = (1 - face['distance'])*100
+    distance = (face['distance']/2)*100
 
     # 3. Print result using console
     print(f"ID: {ids}")

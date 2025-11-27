@@ -27,24 +27,31 @@ logging.basicConfig(
 # Suppress Kafka debug warnings
 logging.getLogger('kafka').setLevel(logging.ERROR)
 
-# Global variables for frame storage
-current_frame = None
-frame_lock = Lock()
+# ============================================================================
+# THREAD ARCHITECTURE:
+# - Background threads: Kafka consumers continuously receive frames from Kafka
+# - Main thread: Flask handles HTTP requests (search, compare, etc.)
+# - Shared memory: Frames are stored in dictionaries with thread-safe locks
+# ============================================================================
+
+# Global variables for frame storage (shared between consumer thread and Flask)
+current_frame = None  # Latest frame from default stream
+frame_lock = Lock()  # Thread-safe access to current_frame
 
 # Kafka configuration
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
 KAFKA_TOPIC = 'video-stream'
 
 # Global variables for camera management
-active_cameras = {}  # {ip: {'process': process, 'topic': topic}}
-camera_lock = Lock()
+active_cameras = {}  # {ip: {'process': process, 'topic': topic, 'thread': thread}}
+camera_lock = Lock()  # Thread-safe access to active_cameras
 
-# Global variables for multiple camera consumers
-camera_consumers = {}  # {ip: consumer}
-camera_frames = {}  # {ip: frame}
-camera_frames_lock = Lock()
+# Global variables for multiple camera consumers (background threads)
+camera_consumers = {}  # {ip: VideoStreamConsumer instance}
+camera_frames = {}  # {ip: latest_frame} - shared memory for frames
+camera_frames_lock = Lock()  # Thread-safe access to camera_frames
 
-# Track active stream connections
+# Track active stream connections (for monitoring)
 active_streams = {}  # {camera_ip: connection_count}
 active_streams_lock = Lock()
 
@@ -60,30 +67,54 @@ except Exception as e:
     COLLECTION = None
     DETECTOR = None
 
+# ============================================================================
+# FRAME CALLBACKS (Called by background consumer threads)
+# These functions update shared memory with latest frames
+# ============================================================================
+
 def update_frame(frame):
-    """Callback to update current frame (for default stream)"""
+    """
+    Callback to update current frame (for default stream)
+    Called by background consumer thread
+    Thread-safe: Uses lock to update shared memory
+    """
     global current_frame
     with frame_lock:
         current_frame = frame
 
 def create_camera_frame_callback(camera_ip):
-    """Create a callback function for a specific camera"""
+    """
+    Create a callback function for a specific camera
+    Returns a function that will be called by consumer thread
+    Thread-safe: Uses lock to update shared memory
+    """
     def callback(frame):
         with camera_frames_lock:
             camera_frames[camera_ip] = frame
     return callback
 
-# Initialize consumer with callback
+# Initialize default consumer (will run in background thread)
 video_consumer = VideoStreamConsumer(KAFKA_TOPIC, KAFKA_BOOTSTRAP_SERVERS, frame_callback=update_frame)
 
+# ============================================================================
+# VIDEO FEED GENERATORS (Run in Flask request context)
+# These functions read frames from shared memory (non-blocking)
+# Background consumer threads continuously update the frames
+# ============================================================================
+
 def generate_frames():
-    """Generator function to yield video frames"""
+    """
+    Generator function to yield video frames for default stream
+    Runs in Flask request context (main thread)
+    Non-blocking: Only reads from shared memory updated by consumer thread
+    """
     global current_frame
     no_frame_count = 0
     max_no_frame_attempts = 150  # Stop after 5 seconds of no frames (at ~30fps)
     
     try:
         while True:
+            # Non-blocking read from shared memory
             with frame_lock:
                 if current_frame is None:
                     no_frame_count += 1
@@ -130,7 +161,11 @@ def video_feed():
 
 @app.route('/video_feed/<camera_ip>')
 def video_feed_by_camera(camera_ip):
-    """Video streaming route for specific camera"""
+    """
+    Video streaming route for specific camera
+    Runs in Flask request context (main thread)
+    Non-blocking: Only reads frames from shared memory
+    """
     
     # Track connection
     with active_streams_lock:
@@ -140,6 +175,10 @@ def video_feed_by_camera(camera_ip):
         logging.info(f"Client connected to camera {camera_ip} stream (total: {active_streams[camera_ip]})")
     
     def generate_camera_frames():
+        """
+        Generator for specific camera frames
+        Non-blocking: Only reads from shared memory updated by consumer thread
+        """
         no_frame_count = 0
         max_no_frame_attempts = 150  # Stop after 5 seconds of no frames (at ~30fps)
         last_frame_time = time.time()
@@ -147,6 +186,7 @@ def video_feed_by_camera(camera_ip):
         
         try:
             while True:
+                # Non-blocking read from shared memory
                 with camera_frames_lock:
                     if camera_ip not in camera_frames or camera_frames[camera_ip] is None:
                         no_frame_count += 1
@@ -223,9 +263,18 @@ def health():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'video-streaming'})
 
+# ============================================================================
+# CAMERA MANAGEMENT APIs (Run in main thread)
+# These endpoints manage camera processes and consumer threads
+# ============================================================================
+
 @app.route('/api/camera/start', methods=['POST'])
 def start_camera():
-    """Start camera stream by IP"""
+    """
+    Start camera stream by IP
+    Runs in main thread
+    Creates: 1) Producer process, 2) Consumer background thread
+    """
     try:
         data = request.get_json()
         camera_ip = data.get('ip')
@@ -288,7 +337,7 @@ def start_camera():
                     'topic': topic
                 }
                 
-                # Start consumer for this camera
+                # Create consumer for this camera
                 consumer = VideoStreamConsumer(
                     topic, 
                     kafka_servers, 
@@ -296,11 +345,16 @@ def start_camera():
                 )
                 camera_consumers[camera_ip] = consumer
                 
-                # Start consumer in a separate thread
-                consumer_thread = Thread(target=consumer.start, daemon=True)
+                # Start consumer in a separate BACKGROUND thread
+                # This thread will continuously receive frames from Kafka
+                # and update shared memory via callback
+                consumer_thread = Thread(target=consumer.start, daemon=True, name=f"Consumer-{camera_ip}")
                 consumer_thread.start()
                 
-                logging.info(f"Started consumer for camera {camera_ip} on topic {topic}")
+                # Store thread reference
+                active_cameras[camera_ip]['thread'] = consumer_thread
+                
+                logging.info(f"Started background consumer thread for camera {camera_ip} on topic {topic}")
                 
                 return jsonify({
                     'message': f'Camera {camera_ip} started successfully',
@@ -482,10 +536,18 @@ def camera_status(ip):
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
+# ============================================================================
+# PROCESSING APIs (Run in main thread)
+# These endpoints perform CPU-intensive operations
+# They read video files directly (not from Kafka stream)
+# ============================================================================
+
 @app.route('/api/search/person-in-video', methods=['POST'])
 def search_person_in_video():
     """
     Search for a person in video by uploaded image
+    Runs in main thread (blocking operation)
+    Reads video file directly (not from Kafka stream)
     
     Request:
         - image: uploaded image file (multipart/form-data)
@@ -569,16 +631,38 @@ def search_person_in_video():
 @app.route('/api/detection/frame-image', methods=['POST'])
 def get_detection_frame_image():
     """
-    Get frame image with bounding box drawn
+    Get frame image with bounding boxes drawn for multiple faces
+    Runs in main thread
+    Reads video file directly (not from Kafka stream)
     
     Request (JSON):
         - camera_ip: IP address of camera
         - frame_number: frame number to extract
-        - bbox: bounding box coordinates {x, y, width, height}
-        - confidence: confidence score (optional, for display)
+        - faces: list of face objects, each containing:
+            - bbox: {x, y, width, height}
+            - confidence: confidence score (optional)
+            - label: text label (optional, e.g., person name)
     
     Response:
-        - JPEG image with bounding box drawn
+        - JPEG image with bounding boxes drawn for all faces
+    
+    Example request:
+    {
+        "camera_ip": "192.168.1.100",
+        "frame_number": 150,
+        "faces": [
+            {
+                "bbox": {"x": 100, "y": 50, "width": 80, "height": 100},
+                "confidence": 95.5,
+                "label": "John Doe"
+            },
+            {
+                "bbox": {"x": 300, "y": 60, "width": 75, "height": 95},
+                "confidence": 87.3,
+                "label": "Jane Smith"
+            }
+        ]
+    }
     """
     try:
         data = request.get_json()
@@ -589,19 +673,16 @@ def get_detection_frame_image():
         
         camera_ip = data.get('camera_ip')
         frame_number = data.get('frame_number')
-        bbox = data.get('bbox')
+        faces = data.get('faces', []) 
         
         if not camera_ip:
             return jsonify({'error': 'camera_ip is required'}), 400
         if frame_number is None:
             return jsonify({'error': 'frame_number is required'}), 400
-        if not bbox:
-            return jsonify({'error': 'bbox is required'}), 400
         
-        # Validate bbox structure
-        required_bbox_fields = ['x', 'y', 'width', 'height']
-        if not all(field in bbox for field in required_bbox_fields):
-            return jsonify({'error': f'bbox must contain: {", ".join(required_bbox_fields)}'}), 400
+        # Validate faces is a list
+        if not isinstance(faces, list):
+            return jsonify({'error': 'faces must be a list'}), 400
         
         # Validate IP format
         ip_parts = camera_ip.split('.')
@@ -631,33 +712,102 @@ def get_detection_frame_image():
         if not ret or frame is None:
             return jsonify({'error': f'Failed to read frame {frame_number}'}), 404
         
-        # Extract bbox coordinates
-        x = int(bbox['x'])
-        y = int(bbox['y'])
-        width = int(bbox['width'])
-        height = int(bbox['height'])
+        # Draw bounding boxes for all faces
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        font_thickness = 2
+        box_thickness = 2
         
-        # Draw bounding box
-        color = (0, 255, 0)  # Green color in BGR
-        thickness = 2
-        cv2.rectangle(frame, (x, y), (x + width, y + height), color, thickness)
+        # Define colors for different faces (cycle through if more faces than colors)
+        colors = [
+            (0, 255, 0),    # Green
+            (255, 0, 0),    # Blue
+            (0, 0, 255),    # Red
+            (255, 255, 0),  # Cyan
+            (255, 0, 255),  # Magenta
+            (0, 255, 255),  # Yellow
+        ]
         
-        # Add confidence text if provided
-        confidence = data.get('confidence')
-        if confidence is not None:
-            label = f"Confidence: {confidence:.2f}%"
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.6
-            font_thickness = 2
+        for idx, face in enumerate(faces):
+            # Validate face structure
+            if not isinstance(face, dict):
+                logging.warning(f"Skipping invalid face at index {idx}: not a dict")
+                continue
             
-            # Get text size for background
-            (text_width, text_height), baseline = cv2.getTextSize(label, font, font_scale, font_thickness)
+            bbox = face.get('bbox')
+            if not bbox:
+                logging.warning(f"Skipping face at index {idx}: missing bbox")
+                continue
             
-            # Draw background rectangle for text
-            cv2.rectangle(frame, (x, y - text_height - 10), (x + text_width, y), color, -1)
+            # Validate bbox structure
+            required_bbox_fields = ['x', 'y', 'width', 'height']
+            if not all(field in bbox for field in required_bbox_fields):
+                logging.warning(f"Skipping face at index {idx}: bbox missing required fields")
+                continue
             
-            # Draw text
-            cv2.putText(frame, label, (x, y - 5), font, font_scale, (0, 0, 0), font_thickness)
+            try:
+                # Extract bbox coordinates
+                x = int(bbox['x'])
+                y = int(bbox['y'])
+                width = int(bbox['width'])
+                height = int(bbox['height'])
+                
+                # Get color for this face (cycle through colors)
+                color = colors[idx % len(colors)]
+                
+                # Draw bounding box
+                cv2.rectangle(frame, (x, y), (x + width, y + height), color, box_thickness)
+                
+                # Prepare label text
+                label_parts = []
+                
+                # Add custom label if provided
+                if 'label' in face and face['label']:
+                    label_parts.append(str(face['label']))
+                
+                # Add confidence if provided
+                confidence = face.get('confidence')
+                if confidence is not None:
+                    label_parts.append(f"{confidence:.1f}%")
+                
+                # Combine label parts
+                if label_parts:
+                    label = " - ".join(label_parts)
+                    
+                    # Get text size for background
+                    (text_width, text_height), baseline = cv2.getTextSize(
+                        label, font, font_scale, font_thickness
+                    )
+                    
+                    # Calculate text position (above bbox)
+                    text_y = y - 10
+                    if text_y < text_height + 10:
+                        # If not enough space above, put it below
+                        text_y = y + height + text_height + 10
+                    
+                    # Draw background rectangle for text
+                    cv2.rectangle(
+                        frame, 
+                        (x, text_y - text_height - 5), 
+                        (x + text_width + 5, text_y + 5), 
+                        color, 
+                        -1
+                    )
+                    
+                    # Draw text
+                    cv2.putText(
+                        frame, 
+                        label, 
+                        (x + 2, text_y), 
+                        font, 
+                        font_scale, 
+                        (255, 255, 255),  # White text
+                        font_thickness
+                    )
+                
+            except (ValueError, TypeError) as e:
+                logging.warning(f"Error processing face at index {idx}: {str(e)}")
+                continue
         
         # Encode frame as JPEG
         ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
@@ -677,6 +827,8 @@ def get_detection_frame_image():
 def compare_two_faces():
     """
     Compare two face images and calculate similarity
+    Runs in main thread (CPU-intensive operation)
+    Independent of Kafka streaming
     
     Request (multipart/form-data):
         - image1: first face image file (required)
@@ -799,6 +951,8 @@ def compare_two_faces():
 def add_person_to_chroma():
     """
     Add a person's face embedding to ChromaDB
+    Runs in main thread (CPU-intensive operation)
+    Independent of Kafka streaming
     
     Request (JSON):
         - person_id: unique identifier for the person (required)
@@ -917,19 +1071,52 @@ def add_person_to_chroma():
 
 
 
+# ============================================================================
+# APPLICATION STARTUP
+# ============================================================================
+
 if __name__ == '__main__':
+    logging.info("="*80)
+    logging.info("STARTING VIDEO STREAMING APPLICATION")
+    logging.info("="*80)
+    logging.info("Thread Architecture:")
+    logging.info("  - Main Thread: Flask HTTP server (handles API requests)")
+    logging.info("  - Background Threads: Kafka consumers (receive video frames)")
+    logging.info("  - Shared Memory: Frame dictionaries with thread-safe locks")
+    logging.info("="*80)
+    
     # Register cleanup handler with all consumers
     register_cleanup_handler(active_cameras, camera_lock, camera_consumers, video_consumer)
+    logging.info("✓ Cleanup handlers registered")
     
-    # Start Kafka consumer
+    # Start default Kafka consumer in background thread
+    # This thread will continuously receive frames and update shared memory
     start_consumer_thread(video_consumer)
+    logging.info(f"✓ Default consumer thread started (topic: {KAFKA_TOPIC})")
     
-    # Start Flask server
+    # Start Flask server in main thread
+    # This handles all HTTP requests (streaming, search, processing)
+    logging.info("✓ Starting Flask server on 0.0.0.0:5001")
+    logging.info("="*80)
+    
     try:
         app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
     except KeyboardInterrupt:
-        logging.info("Shutting down server...")
+        logging.info("\n" + "="*80)
+        logging.info("SHUTTING DOWN APPLICATION")
+        logging.info("="*80)
         from service.StreamService import cleanup_consumers
+        
+        # Stop all consumers
+        logging.info("Stopping camera consumers...")
         cleanup_consumers(camera_consumers)
+        
+        logging.info("Stopping default consumer...")
         video_consumer.stop()
+        
+        # Cleanup camera processes
+        logging.info("Cleaning up camera processes...")
         cleanup_processes(active_cameras, camera_lock)
+        
+        logging.info("✓ Shutdown complete")
+        logging.info("="*80)

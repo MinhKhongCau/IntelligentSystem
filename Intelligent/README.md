@@ -100,6 +100,35 @@ python video_producer.py 1
 python video_producer.py /path/to/video.mp4
 ```
 
+
+## Flow
+
+┌─────────────────────────────────────────────────────────────┐
+│                      MAIN THREAD (Flask)                    │
+│  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐  │
+│  │  Video Feed    │  │  Search API    │  │  Compare API  │  │
+│  │  (read frames) │  │  (process)     │  │  (process)    │  │
+│  └────────┬───────┘  └────────────────┘  └───────────────┘  │
+│           │ read (non-blocking)                             │
+└───────────┼─────────────────────────────────────────────────┘
+            │
+            ▼
+┌───────────────────────────────────────────────────────────┐
+│                    SHARED MEMORY (Locks)                  │
+│  ┌──────────────────┐  ┌──────────────────────────────┐   │
+│  │  current_frame   │  │  camera_frames[ip]           │   │
+│  └────────▲─────────┘  └────────▲─────────────────────┘   │
+└───────────┼─────────────────────┼─────────────────────────┘
+            │ write               │ write
+            │                     │
+┌───────────┴──────────┐  ┌───────┴──────────────────────┐
+│  BACKGROUND THREAD   │  │  BACKGROUND THREADS          │
+│  Default Consumer    │  │  Camera Consumers            │
+│  (Kafka → frames)    │  │  (Kafka → frames)            │
+└──────────────────────┘  └──────────────────────────────┘
+
+
+
 ## Configuration
 
 Edit the following variables in `app.py`:
