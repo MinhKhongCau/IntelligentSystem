@@ -33,7 +33,8 @@ from utils.kafka_stream_utils import (
     process_video_file_for_face_recognition,
     search_person_in_video_stream,
     batch_process_videos_for_person,
-    search_person_by_image_in_video
+    search_person_by_image_in_video,
+    search_all_faces_in_video
 )
 
 from utils.cosin_implimentation import (
@@ -63,5 +64,6 @@ __all__ = [
     'process_video_file_for_face_recognition',
     'search_person_in_video_stream',
     'batch_process_videos_for_person',
-    'search_person_by_image_in_video'
+    'search_person_by_image_in_video',
+    'search_all_faces_in_video'
 ]

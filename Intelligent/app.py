@@ -545,35 +545,32 @@ def camera_status(ip):
 @app.route('/api/search/person-in-video', methods=['POST'])
 def search_person_in_video():
     """
-    Search for a person in video by uploaded image
+    Search for a person in video
+    Supports 2 modes:
+    1. With image: Direct cosine similarity matching
+    2. Without image: Search all faces and identify using ChromaDB
+    
     Runs in main thread (blocking operation)
     Reads video file directly (not from Kafka stream)
     
-    Request:
-        - image: uploaded image file (multipart/form-data)
-        - camera_ip: IP address of camera
+    Request (multipart/form-data):
+        - camera_ip: IP address of camera (required)
+        - image: uploaded image file (optional - if provided, uses direct matching)
         - threshold: optional confidence threshold (default: 0.6)
     
     Response:
-        - detections: list of matches with frame_number, timestamp, confidence
+        - detections: list of matches with frame_number, timestamp, confidence, identity
         - total_frames: total frames processed
         - fps: video frame rate
+        - search_mode: 'image_matching' or 'chromadb_search'
     """
     try:
-        # Validate request
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image file provided'}), 400
-        
+        # Validate camera_ip
         if 'camera_ip' not in request.form:
             return jsonify({'error': 'Camera IP is required'}), 400
         
-        image_file = request.files['image']
         camera_ip = request.form['camera_ip']
         threshold = float(request.form.get('threshold', 0.6))
-        
-        # Validate image file
-        if image_file.filename == '':
-            return jsonify({'error': 'Empty image filename'}), 400
         
         # Validate IP format
         ip_parts = camera_ip.split('.')
@@ -588,21 +585,43 @@ def search_person_in_video():
                 'suggestion': f'Please ensure video file {video_file} exists'
             }), 404
         
-        # Read and decode image
-        image_bytes = image_file.read()
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        uploaded_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Check if image is provided
+        has_image = 'image' in request.files and request.files['image'].filename != ''
         
-        if uploaded_image is None:
-            return jsonify({'error': 'Failed to decode image file'}), 400
-        
-        # Search for person in video
-        logging.info(f"Searching for person in camera {camera_ip} with threshold {threshold}")
-        result = utils.search_person_by_image_in_video(
-            uploaded_image=uploaded_image,
-            video_path=video_file,
-            threshold=threshold
-        )
+        if has_image:
+            # MODE 1: Direct image matching using cosine similarity
+            logging.info(f"Mode: Image matching - Searching for person in camera {camera_ip} with threshold {threshold}")
+            
+            image_file = request.files['image']
+            
+            # Read and decode image
+            image_bytes = image_file.read()
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            uploaded_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if uploaded_image is None:
+                return jsonify({'error': 'Failed to decode image file'}), 400
+            
+            # Search for person in video using uploaded image
+            result = utils.search_person_by_image_in_video(
+                uploaded_image=uploaded_image,
+                video_path=video_file,
+                threshold=threshold
+            )
+            
+            search_mode = 'image_matching'
+            
+        else:
+            # MODE 2: Search all faces and identify using ChromaDB
+            logging.info(f"Mode: ChromaDB search - Identifying all faces in camera {camera_ip} with threshold {threshold}")
+            
+            # Search all faces in video and identify them
+            result = utils.search_all_faces_in_video(
+                video_path=video_file,
+                threshold=threshold
+            )
+            
+            search_mode = 'chromadb_search'
         
         # Check for errors
         if 'error' in result and result['error']:
@@ -616,6 +635,7 @@ def search_person_in_video():
             'success': True,
             'camera_ip': camera_ip,
             'threshold': threshold,
+            'search_mode': search_mode,
             'detections': result.get('detections', []),
             'total_detections': len(result.get('detections', [])),
             'total_frames': result.get('total_frames', 0),

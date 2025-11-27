@@ -234,24 +234,14 @@ def batch_process_videos_for_person(video_dir, target_person_id, threshold=0.6, 
     return all_results
 
 
-def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
+def search_all_faces_in_video(video_path, threshold=0.6):
     """
-    Search for a person in video by comparing with uploaded image using ChromaDB
-    Optimized: Only reads 1 frame every 3 seconds
-    Returns full identity information including person_id and metadata
+    Search and identify all faces in video using ChromaDB
+    Returns all detected faces with their identities from database
     """
     collection, _ = load_chroma_database()
     infer = load_model()
     detector = MTCNN()
-    
-    # Extract face embedding from uploaded image and add to temporary collection
-    faces_in_upload = detector.detect_faces(uploaded_image)
-    if not faces_in_upload:
-        return {'error': 'No face detected in uploaded image', 'detections': []}
-    
-    # Get the first face from uploaded image
-    bbox = faces_in_upload[0]['box']
-    uploaded_face = crop_face(uploaded_image, bbox)
     
     # Open video file
     cap = cv2.VideoCapture(video_path)
@@ -263,7 +253,7 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
     duration = total_frames / fps
     
     # Process 1 frame every 3 seconds
-    frame_interval = int(fps * 3)  # 3 seconds worth of frames
+    frame_interval = int(fps * 3)
     
     detections = []
     frames_to_process = list(range(0, total_frames, frame_interval))
@@ -272,6 +262,140 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
     print(f"Duration: {duration:.1f}s, FPS: {fps}, Total frames: {total_frames}")
     print(f"Sampling: 1 frame every 3 seconds (interval: {frame_interval} frames)")
     print(f"Total frames to process: {len(frames_to_process)}")
+    
+    for idx, frame_number in enumerate(frames_to_process):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+        ret, frame = cap.read()
+        
+        if not ret:
+            print(f"Warning: Could not read frame {frame_number}")
+            continue
+        
+        timestamp = frame_number / fps
+        
+        # Detect faces in this frame
+        faces_in_frame = detector.detect_faces(frame)
+        
+        for face in faces_in_frame:
+            bbox = face['box']
+            (x, y, w, h) = bbox
+            face_cropped = crop_face(frame, bbox)
+            
+            # Search face in ChromaDB
+            results = search_face(face_cropped, infer, top_k=1, collection=collection)
+            
+            if results and results['distances'] and len(results['distances'][0]) > 0:
+                distance = results['distances'][0][0]
+                
+                # Check if match threshold
+                if distance > threshold:
+                    confidence = (1 + distance) / 2 * 100
+                    
+                    # Extract identity information
+                    person_id = None
+                    person_name = None
+                    metadata = {}
+                    
+                    if results.get('ids') and len(results['ids'][0]) > 0:
+                        person_id = results['ids'][0][0]
+                    
+                    if results.get('metadatas') and len(results['metadatas'][0]) > 0:
+                        metadata = results['metadatas'][0][0]
+                        person_name = metadata.get('person_name') or metadata.get('name')
+                    
+                    detection = {
+                        'frame_number': frame_number,
+                        'timestamp': round(timestamp, 2),
+                        'confidence': round(confidence, 2),
+                        'distance': round(float(distance), 4),
+                        'bbox': {
+                            'x': int(x),
+                            'y': int(y),
+                            'width': int(w),
+                            'height': int(h)
+                        },
+                        'identity': {
+                            'person_id': person_id,
+                            'person_name': person_name,
+                            'metadata': metadata
+                        }
+                    }
+                    detections.append(detection)
+                    print(f"✓ [{timestamp:.1f}s] Frame {frame_number} - Found: {person_name or person_id}, Confidence: {confidence:.2f}%")
+        
+        # Progress indicator
+        if (idx + 1) % 10 == 0 or (idx + 1) == len(frames_to_process):
+            progress = ((idx + 1) / len(frames_to_process)) * 100
+            print(f"Progress: {progress:.1f}% ({idx + 1}/{len(frames_to_process)} frames processed)")
+    
+    cap.release()
+    print(f"\n✓ Processing complete!")
+    print(f"Total frames in video: {total_frames}")
+    print(f"Frames processed: {len(frames_to_process)} ({(len(frames_to_process)/total_frames)*100:.1f}%)")
+    print(f"Detections found: {len(detections)}")
+    
+    return {
+        'detections': detections,
+        'total_frames': total_frames,
+        'processed_frames': len(frames_to_process),
+        'fps': fps,
+        'duration': round(duration, 2)
+    }
+
+
+def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
+    """
+    Search for a person in video by comparing with uploaded image using direct cosine similarity
+    Does NOT use ChromaDB - compares embeddings directly
+    Optimized: Only reads 1 frame every 3 seconds
+    
+    Args:
+        uploaded_image: Image containing the face to search for
+        video_path: Path to video file
+        threshold: Cosine similarity threshold (default: 0.6, range: -1 to 1)
+    
+    Returns:
+        Dictionary with detections, total_frames, fps, etc.
+    """
+    from .face_utils import cosine_similarity_numpy, preprocess_img, image_to_embedding
+    
+    infer = load_model()
+    detector = MTCNN()
+    
+    # Extract face embedding from uploaded image
+    faces_in_upload = detector.detect_faces(uploaded_image)
+    if not faces_in_upload:
+        return {'error': 'No face detected in uploaded image', 'detections': []}
+    
+    # Get the first face from uploaded image and generate embedding
+    bbox_upload = faces_in_upload[0]['box']
+    uploaded_face = crop_face(uploaded_image, bbox_upload)
+    uploaded_face_preprocessed = preprocess_img(uploaded_face)
+    uploaded_embedding = image_to_embedding(uploaded_face_preprocessed, infer)
+    uploaded_embedding = uploaded_embedding.flatten()
+    
+    print(f"✓ Extracted embedding from uploaded image (dimension: {len(uploaded_embedding)})")
+    
+    # Open video file
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return {'error': f'Cannot open video file {video_path}', 'detections': []}
+    
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = total_frames / fps
+    
+    # Process 1 frame every 3 seconds
+    frame_interval = int(fps * 3)
+    
+    detections = []
+    frames_to_process = list(range(0, total_frames, frame_interval))
+    
+    print(f"Processing video: {video_path}")
+    print(f"Duration: {duration:.1f}s, FPS: {fps}, Total frames: {total_frames}")
+    print(f"Sampling: 1 frame every 3 seconds (interval: {frame_interval} frames)")
+    print(f"Total frames to process: {len(frames_to_process)}")
+    print(f"Using direct cosine similarity matching (threshold: {threshold})")
     
     for idx, frame_number in enumerate(frames_to_process):
         # Jump directly to the frame we want to process
@@ -292,49 +416,42 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
             (x, y, w, h) = bbox
             face_cropped = crop_face(frame, bbox)
             
-            # Use search_face to find similar faces in ChromaDB
-            results = search_face(face_cropped, infer, top_k=1, collection=collection)
+            # Generate embedding for this face
+            face_preprocessed = preprocess_img(face_cropped)
+            frame_embedding = image_to_embedding(face_preprocessed, infer)
+            frame_embedding = frame_embedding.flatten()
             
-            if results and results['distances'] and len(results['distances'][0]) > 0:
-                distance = results['distances'][0][0]
+            # Calculate cosine similarity directly
+            similarity = cosine_similarity_numpy(uploaded_embedding, frame_embedding)
+            
+            # Check if match (cosine similarity ranges from -1 to 1)
+            if similarity > threshold:
+                # Convert similarity to confidence percentage
+                confidence = (similarity + 1) / 2 * 100
                 
-                # Check if match
-                if distance > threshold:
-                    confidence = (2-distance) / 2 * 100
-                    
-                    # Extract identity information from ChromaDB results
-                    person_id = None
-                    person_name = None
-                    metadata = {}
-                    
-                    if results.get('ids') and len(results['ids'][0]) > 0:
-                        person_id = results['ids'][0][0]
-                    
-                    if results.get('metadatas') and len(results['metadatas'][0]) > 0:
-                        metadata = results['metadatas'][0][0]
-                        person_name = metadata.get('person_name') or metadata.get('name')
-                    
-                    # Store full detection information with identity
-                    detection = {
-                        'frame_number': frame_number,
-                        'timestamp': round(timestamp, 2),
-                        'confidence': round(confidence, 2),
-                        'distance': round(float(distance), 4),
-                        'bbox': {
-                            'x': int(x),
-                            'y': int(y),
-                            'width': int(w),
-                            'height': int(h)
-                        },
-                        'identity': {
-                            'person_id': person_id,
-                            'person_name': person_name,
-                            'metadata': metadata
+                # Store detection information
+                detection = {
+                    'frame_number': frame_number,
+                    'timestamp': round(timestamp, 2),
+                    'confidence': round(confidence, 2),
+                    'distance': round(float(similarity), 4),  # Using similarity as distance
+                    'bbox': {
+                        'x': int(x),
+                        'y': int(y),
+                        'width': int(w),
+                        'height': int(h)
+                    },
+                    'identity': {
+                        'person_id': None,  # No ID when using direct matching
+                        'person_name': 'Matched Person',  # Generic name
+                        'metadata': {
+                            'match_type': 'direct_cosine_similarity',
+                            'similarity_score': round(float(similarity), 4)
                         }
                     }
-                    detections.append(detection)
-                    print(f"✓ [{timestamp:.1f}s] Frame {frame_number} - Match! Person: {person_name or person_id}, Confidence: {confidence:.2f}%")
-                    # break  # Only need one match per frame
+                }
+                detections.append(detection)
+                print(f"✓ [{timestamp:.1f}s] Frame {frame_number} - Match! Similarity: {similarity:.4f}, Confidence: {confidence:.2f}%")
         
         # Progress indicator
         if (idx + 1) % 10 == 0 or (idx + 1) == len(frames_to_process):
@@ -348,9 +465,9 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
     print(f"Detections found: {len(detections)}")
     
     return {
-        'detections': detections, 
-        'total_frames': total_frames, 
-        'processed_frames': len(frames_to_process), 
+        'detections': detections,
+        'total_frames': total_frames,
+        'processed_frames': len(frames_to_process),
         'fps': fps,
         'duration': round(duration, 2)
     }
