@@ -1,0 +1,389 @@
+{
+	"info": {
+		"_postman_id": "cctv-api-collection",
+		"name": "CCTV Camera Management API",
+		"description": "API collection for managing CCTV cameras and person search",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Camera Management",
+			"item": [
+				{
+					"name": "Start Camera",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ip\": \"10.0.0.2\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/camera/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"camera",
+								"start"
+							]
+						},
+						"description": "Start a camera stream by IP address. Video file must exist at video/{IP}.mp4"
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Camera",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ip\": \"10.0.0.2\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/camera/stop",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"camera",
+								"stop"
+							]
+						},
+						"description": "Stop a running camera stream"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Cameras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/camera/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"camera",
+								"list"
+							]
+						},
+						"description": "Get list of all active cameras"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Camera Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/camera/status/10.0.0.2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"camera",
+								"status",
+								"10.0.0.2"
+							]
+						},
+						"description": "Get status of a specific camera by IP"
+					},
+					"response": []
+				},
+				{
+					"name": "List Active Streams",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/streams/active",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"streams",
+								"active"
+							]
+						},
+						"description": "Get list of active stream connections"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Person Search",
+			"item": [
+				{
+					"name": "Search Person in Video (With Image)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": "/path/to/person/image.jpg",
+									"description": "Image of person to search for"
+								},
+								{
+									"key": "camera_ip",
+									"value": "10.0.0.2",
+									"type": "text",
+									"description": "Camera IP address"
+								},
+								{
+									"key": "threshold",
+									"value": "0.6",
+									"type": "text",
+									"description": "Similarity threshold (0.0 - 1.0)"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/search/person-in-video",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"search",
+								"person-in-video"
+							]
+						},
+						"description": "Search for a specific person in video using uploaded image (direct cosine similarity)"
+					},
+					"response": []
+				},
+				{
+					"name": "Search All Faces in Video (No Image)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "camera_ip",
+									"value": "10.0.0.2",
+									"type": "text",
+									"description": "Camera IP address"
+								},
+								{
+									"key": "threshold",
+									"value": "0.6",
+									"type": "text",
+									"description": "Similarity threshold (0.0 - 1.0)"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/search/person-in-video",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"search",
+								"person-in-video"
+							]
+						},
+						"description": "Search and identify all faces in video using ChromaDB"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Detection Frame Image",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"camera_ip\": \"10.0.0.2\",\n  \"frame_number\": 150,\n  \"faces\": [\n    {\n      \"bbox\": {\n        \"x\": 100,\n        \"y\": 50,\n        \"width\": 80,\n        \"height\": 100\n      },\n      \"confidence\": 95.5,\n      \"label\": \"John Doe\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/detection/frame-image",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"detection",
+								"frame-image"
+							]
+						},
+						"description": "Get a specific frame from video with bounding boxes drawn"
+					},
+					"response": []
+				},
+				{
+					"name": "Compare Two Faces",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image1",
+									"type": "file",
+									"src": "/path/to/face1.jpg",
+									"description": "First face image"
+								},
+								{
+									"key": "image2",
+									"type": "file",
+									"src": "/path/to/face2.jpg",
+									"description": "Second face image"
+								},
+								{
+									"key": "threshold",
+									"value": "0.6",
+									"type": "text",
+									"description": "Similarity threshold"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/compare-faces",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"compare-faces"
+							]
+						},
+						"description": "Compare two face images and calculate similarity"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ChromaDB Management",
+			"item": [
+				{
+					"name": "Add Person to ChromaDB",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"person_id\": \"123\",\n  \"name\": \"John Doe\",\n  \"image_url\": \"http://localhost:8080/uploads/faces/john_doe.jpg\",\n  \"metadata\": {\n    \"age\": 30,\n    \"gender\": \"male\",\n    \"description\": \"Missing person\"\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5001/api/add-chroma",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"add-chroma"
+							]
+						},
+						"description": "Add a person's face embedding to ChromaDB for identification"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if service is running"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stream Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5001/api/status",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"api",
+								"status"
+							]
+						},
+						"description": "Get default stream status"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

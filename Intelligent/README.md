@@ -102,7 +102,7 @@ python video_producer.py /path/to/video.mp4
 
 
 ## Flow
-
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                      MAIN THREAD (Flask)                    │
 │  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐  │
@@ -126,7 +126,7 @@ python video_producer.py /path/to/video.mp4
 │  Default Consumer    │  │  Camera Consumers            │
 │  (Kafka → frames)    │  │  (Kafka → frames)            │
 └──────────────────────┘  └──────────────────────────────┘
-
+```
 
 
 ## Configuration
