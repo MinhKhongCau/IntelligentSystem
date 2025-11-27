@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import ImageUploader from '../common/ImageUploader';
-import AddMissingArea from '../missing form/AddmissingArea';
+import AddMissingArea from '../missing-form/AddmissingArea';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -87,8 +87,6 @@ const ReportFoundForm = ({ missingDocumentId, onClose, onSuccess }) => {
 
   return (
     <form onSubmit={handleReportSubmit} className="space-y-4">
-      <h4 className="text-xl font-semibold text-gray-900 mb-4">Report Found Person</h4>
-      
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Description *

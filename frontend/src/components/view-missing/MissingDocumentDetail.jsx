@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import FaceComparisonModal from './FaceComparisonModal';
+import ReportFoundForm from './ReportFoundForm';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -17,6 +18,7 @@ const MissingDocumentDetail = () => {
     reportImage: null,
     reportId: null
   });
+  const [showReportForm, setShowReportForm] = useState(false);
 
   useEffect(() => {
     fetchDocumentAndReports();
@@ -105,30 +107,11 @@ const MissingDocumentDetail = () => {
           </div>
           {document.caseStatus === 'Missing' && (
             <button
-              onClick={async () => {
-                if (window.confirm('Mark this person as found?')) {
-                  try {
-                    const token = localStorage.getItem('token');
-                    await axios.put(
-                      `${API_BASE}/api/missing-documents/${id}/mark-found`,
-                      {},
-                      {
-                        headers: {
-                          'Authorization': `Bearer ${token}`,
-                        },
-                      }
-                    );
-                    alert('Person marked as found!');
-                    fetchDocumentAndReports();
-                  } catch (err) {
-                    console.error('Error updating status:', err);
-                    alert(err.response?.data || 'Error updating status');
-                  }
-                }
-              }}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              onClick={() => setShowReportForm(true)}
+              className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2"
             >
-              Mark as Found
+              <span>📍</span>
+              Report Found
             </button>
           )}
         </div>
@@ -294,6 +277,33 @@ const MissingDocumentDetail = () => {
         missingPersonName={document?.name}
         reportId={comparisonModal.reportId}
       />
+
+      {/* Report Found Form Modal */}
+      {showReportForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">Report Found Person</h3>
+              <button
+                onClick={() => setShowReportForm(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              <ReportFoundForm
+                missingDocumentId={id}
+                onClose={() => setShowReportForm(false)}
+                onSuccess={() => {
+                  fetchDocumentAndReports();
+                  setShowReportForm(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

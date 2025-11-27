@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import MissingDocumentDetailPopup from './MissingDocumentDetailPopup';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -8,9 +9,10 @@ const PersonCard = (props) => {
   const [showPopup, setShowPopup] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const navigate = useNavigate()
   
-  const lookDetail = () => {
-    setShowPopup(true);
+  const lookDetail = (id) => {
+    navigate(`/missing-document/${id}`);
   };
 
   const onClosePopup = () => {

@@ -45,7 +45,7 @@ const ManageMissingList = () => {
   };
 
   const handleViewDetails = (id) => {
-    navigate(`/police/missing-document/${id}`);
+    navigate(`/missing-document/${id}`);
   };
 
   const updateDocumentStatus = async (id, status) => {

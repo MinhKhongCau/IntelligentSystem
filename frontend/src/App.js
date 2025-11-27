@@ -1,13 +1,13 @@
 
 import MissingList from './components/find_loc/MissingList';
 // import SearchButton from './components/find_loc/SearchButton';
-import Formmissing from './components/missing form/Formmissing';
+import Formmissing from './components/missing-form/Formmissing';
 import Navbar from './components/Navbar';
-import Missing_persons from './components/missing_list/Missing_persons';
+import Missing_persons from './components/view-missing/Missing_persons';
 import Hero from './components/Hero/Hero';
 import Login from './components/auth/Login';
 import Logout from './components/auth/Logout';
-import Dashboard from './components/Dashboard';
+import Dashboard from './components/dashboard/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import Register from './components/auth/Register';
@@ -16,18 +16,18 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
-import AddMissingArea from './components/missing form/AddmissingArea';
-import RegisterCarePartner from './components/role/carePartner/RegisterCarePartner';
-import PoliceDashboard from './components/role/police/PoliceDashboard';
-import ManageAccounts from './components/role/police/ManageAccounts';
-import ManageMissingList from './components/role/police/ManageMissingList';
-import ManageReportedDocuments from './components/role/carePartner/ManageReportedDocument';
-import MissingDocumentEditPage from './components/role/carePartner/MissingDocumentEditPage';
-import SubscribedDocuments from './components/missing_list/SubscribedDocuments';
-import MissingReports from './components/role/carePartner/MissingReports';
-import MissingDocumentDetail from './components/role/police/MissingDocumentDetail';
-import CCTVMonitor from './components/role/police/CCTVMonitor';
-import CCTVReportPage from './components/role/police/CCTVReportPage';
+import AddMissingArea from './components/missing-form/AddmissingArea';
+import RegisterCarePartner from './components/carePartner/RegisterCarePartner';
+import PoliceDashboard from './components/dashboard/PoliceDashboard';
+import ManageAccounts from './components/police/ManageAccounts';
+import ManageMissingList from './components/police/ManageMissingList';
+import ManageReportedDocuments from './components/carePartner/ManageReportedDocument';
+import MissingDocumentEditPage from './components/carePartner/MissingDocumentEditPage';
+import SubscribedDocuments from './components/view-missing/SubscribedDocuments';
+import MissingReports from './components/carePartner/MissingReports';
+import MissingDocumentDetail from './components/view-missing/MissingDocumentDetail';
+import CCTVMonitor from './components/police/CCTVMonitor';
+import CCTVReportPage from './components/police/CCTVReportPage';
 function App() {
   return (
     <AuthProvider>
@@ -104,7 +104,7 @@ function App() {
                 <MissingReports/>
               </ProtectedRoute>
             } />
-            <Route path="/police/missing-document/:id" element={
+            <Route path="/missing-document/:id" element={
               <ProtectedRoute>
                 <MissingDocumentDetail/>
               </ProtectedRoute>
