@@ -13,6 +13,9 @@ const ReportFoundForm = ({ missingDocumentId, onClose, onSuccess }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddArea, setShowAddArea] = useState(false);
+  
+  // Determine modal size based on whether AddMissingArea is shown
+  const modalSize = showAddArea ? 'max-w-6xl' : 'max-w-4xl';
 
   const handleImageUpdate = (imageUrl) => {
     setReportData(prev => ({ ...prev, sightingPicture: imageUrl }));
@@ -76,17 +79,28 @@ const ReportFoundForm = ({ missingDocumentId, onClose, onSuccess }) => {
     }
   };
 
-  if (showAddArea) {
-    return (
-      <AddMissingArea 
-        onAreaAdded={handleAreaAdded}
-        onClose={() => setShowAddArea(false)}
-      />
-    );
-  }
-
   return (
-    <form onSubmit={handleReportSubmit} className="space-y-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className={`bg-white rounded-lg ${modalSize} w-full max-h-[90vh] overflow-y-auto transition-all duration-300`}>
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+          <h3 className="text-xl font-bold text-gray-800">
+            {showAddArea ? 'Add Sighting Location' : 'Report Found Person'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+          >
+            ×
+          </button>
+        </div>
+        <div className="p-6">
+          {showAddArea ? (
+            <AddMissingArea 
+              onAreaAdded={handleAreaAdded}
+              onClose={() => setShowAddArea(false)}
+            />
+          ) : (
+            <form onSubmit={handleReportSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Description *
@@ -136,24 +150,28 @@ const ReportFoundForm = ({ missingDocumentId, onClose, onSuccess }) => {
         )}
       </div>
 
-      <div className="flex gap-3 justify-end pt-4">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors font-medium"
-          disabled={isSubmitting}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors font-medium disabled:bg-orange-400"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit Report'}
-        </button>
+              <div className="flex gap-3 justify-end pt-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors font-medium"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors font-medium disabled:bg-orange-400"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
-    </form>
+    </div>
   );
 };
 

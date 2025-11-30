@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReportFoundForm from '../view-missing/ReportFoundForm';
 
 const MissingReports = () => {
     const { id } = useParams();
@@ -8,6 +9,7 @@ const MissingReports = () => {
     const [missingDocument, setMissingDocument] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showReportForm, setShowReportForm] = useState(false);
 
     useEffect(() => {
         fetchMissingDocument();
@@ -115,14 +117,25 @@ const MissingReports = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-5 bg-gray-50 min-h-screen">
-            <div className="flex items-center gap-5 mb-8">
-                <button 
-                    onClick={() => navigate(-1)} 
-                    className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-base"
-                >
-                    ← Quay lại
-                </button>
-                <h1 className="text-3xl font-bold text-gray-800 m-0">Báo cáo phát hiện</h1>
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-5">
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-base"
+                    >
+                        ← Quay lại
+                    </button>
+                    <h1 className="text-3xl font-bold text-gray-800 m-0">Báo cáo phát hiện</h1>
+                </div>
+                {missingDocument && missingDocument.caseStatus === 'Missing' && (
+                    <button
+                        onClick={() => setShowReportForm(true)}
+                        className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2"
+                    >
+                        <span>📍</span>
+                        Báo cáo phát hiện
+                    </button>
+                )}
             </div>
 
             {missingDocument && (
@@ -225,6 +238,33 @@ const MissingReports = () => {
                     </div>
                 )}
             </div>
+
+            {/* Report Found Form Modal */}
+            {showReportForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-gray-800">Báo cáo phát hiện người mất tích</h3>
+                            <button
+                                onClick={() => setShowReportForm(false)}
+                                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <ReportFoundForm
+                                missingDocumentId={id}
+                                onClose={() => setShowReportForm(false)}
+                                onSuccess={() => {
+                                    fetchReports();
+                                    setShowReportForm(false);
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

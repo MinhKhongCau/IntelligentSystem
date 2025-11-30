@@ -41,10 +41,18 @@ const Profile = () => {
           {/* Header Section with Gradient */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-48 relative p-8">
             <div className="absolute -bottom-16 left-8">
-              <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-lg">
-                <span className="text-5xl font-bold text-white">
-                  {user?.username?.charAt(0).toUpperCase() || 'U'}
-                </span>
+              <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-lg overflow-hidden">
+                {user?.profilePictureUrl ? (
+                  <img 
+                    src={user.profilePictureUrl.startsWith('http') ? user.profilePictureUrl : `http://localhost:8080${user.profilePictureUrl}`}
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-5xl font-bold text-white">
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                )}
               </div>
             </div>
           </div>

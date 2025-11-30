@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ImageUploader from '../common/ImageUploader';
 
 const EditProfile = () => {
   const { user, token } = useAuth();
@@ -12,6 +13,7 @@ const EditProfile = () => {
     email: user?.email || '',
     fullName: user?.fullName || '',
     phone: user?.phone || '',
+    profilePictureUrl: user?.profilePictureUrl || '',
   });
   
   const [passwords, setPasswords] = useState({
@@ -43,6 +45,14 @@ const EditProfile = () => {
     setSuccess('');
   };
 
+  const handleImageUpdate = (imageUrl) => {
+    setFormData({
+      ...formData,
+      profilePictureUrl: imageUrl
+    });
+    setSuccess('Profile picture updated! Remember to save changes.');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -61,13 +71,15 @@ const EditProfile = () => {
       );
 
       if (response.data) {
-        // Update local storage
-        const updatedUser = { ...user, ...formData };
+        // Update local storage with response data from server
+        const updatedUser = { ...user, ...response.data };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         
-        setSuccess('Profile updated successfully!');
+        setSuccess('Profile updated successfully! Redirecting...');
+        
+        // Reload page to refresh context after a short delay
         setTimeout(() => {
-          navigate('/profile');
+          window.location.href = '/profile';
         }, 1500);
       }
     } catch (error) {
@@ -162,6 +174,18 @@ const EditProfile = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Profile Information</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profile Picture Section */}
+            <div className="mb-8 pb-8 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Profile Picture</h3>
+              <div className="max-w-md mx-auto">
+                <ImageUploader
+                  currentImage={formData.profilePictureUrl}
+                  onImageUpdate={handleImageUpdate}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Username */}
               <div className="space-y-2">
