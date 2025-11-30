@@ -122,6 +122,19 @@ const Dashboard = () => {
               View Profile
             </button>
           </div>
+
+          {isCarePartner && (
+            <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+              <h3 className="mb-3 text-2xl font-semibold text-gray-800">My Reports</h3>
+              <p className="mb-5 text-base leading-relaxed text-gray-600">View and edit your missing person reports</p>
+              <button 
+                onClick={() => navigate('/my-reports')}
+                className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
+              >
+                View My Reports
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

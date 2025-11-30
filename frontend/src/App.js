@@ -30,6 +30,8 @@ import MissingReports from './components/carePartner/MissingReports';
 import MissingDocumentDetail from './components/view-missing/MissingDocumentDetail';
 import CCTVMonitor from './components/police/CCTVMonitor';
 import CCTVReportPage from './components/police/CCTVReportPage';
+import MyReports from './components/carePartner/MyReports';
+import MyReportEdit from './components/carePartner/MyReportEdit';
 function App() {
   return (
     <AuthProvider>
@@ -129,6 +131,16 @@ function App() {
             <Route path="/police/cctv-report" element={
               <ProtectedRoute>
                 <CCTVReportPage/>
+              </ProtectedRoute>
+            } />
+            <Route path="/my-reports" element={
+              <ProtectedRoute>
+                <MyReports/>
+              </ProtectedRoute>
+            } />
+            <Route path="/my-reports/edit/:id" element={
+              <ProtectedRoute>
+                <MyReportEdit/>
               </ProtectedRoute>
             } />
           </Routes>
