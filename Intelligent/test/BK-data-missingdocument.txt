@@ -1,239 +1,144 @@
+
+Case Missing Document
 1.
-
 Full Name: Donald J. Trummond
-
 Birthday: 06/14/1946
-
 Missing Time: 07/14/2025, 08:08 AM
-
 Identity Card Number: 235436455598
-
 Height: 186
-
 Weight: 86
-
 Identifying Characteristic: Distinct blonde hairstyle
-
 Last Known Outfit: Dark suit, red tie
-
 Medical Conditions: None known
-
 Face picture: —
-
 Reporter Relationship: Assistant
 
 2.
-
 Full Name: Elen Muskard
-
 Birthday: 06/28/1971
-
 Missing Time: 07/10/2025, 09:25 PM
-
 Identity Card Number: 879654123089
-
 Height: 188
-
 Weight: 84
-
 Identifying Characteristic: Sharp jawline, deep-set eyes
-
 Last Known Outfit: Black t-shirt, jeans
-
 Medical Conditions: Insomnia history
-
 Face picture: —
-
 Reporter Relationship: Business partner
 
 3.
-
 Full Name: Barack O'Mara
-
 Birthday: 08/04/1961
-
 Missing Time: 07/11/2025, 04:40 PM
-
 Identity Card Number: 657849123567
-
 Height: 185
-
 Weight: 79
-
 Identifying Characteristic: Calm voice, mole on cheek
-
 Last Known Outfit: Blue shirt, khaki pants
-
 Medical Conditions: None
-
 Face picture: —
-
 Reporter Relationship: Friend
 
 4.
-
 Full Name: Leonel Messa
-
 Birthday: 06/24/1987
-
 Missing Time: 07/13/2025, 11:20 AM
-
 Identity Card Number: 934567821345
-
 Height: 170
-
 Weight: 72
-
 Identifying Characteristic: Short beard
-
 Last Known Outfit: Sports jersey, shorts
-
 Medical Conditions: Mild ankle injury history
-
 Face picture: —
-
 Reporter Relationship: Coach
 
 5.
-
 Full Name: Cristiano Reynoldo
-
 Birthday: 02/05/1985
-
 Missing Time: 07/09/2025, 06:50 PM
-
 Identity Card Number: 112345678902
-
 Height: 187
-
 Weight: 83
-
 Identifying Characteristic: Athletic build
-
 Last Known Outfit: Training gear
-
 Medical Conditions: None
-
 Face picture: —
-
 Reporter Relationship: Teammate
 
 6.
-
 Full Name: Elisabeth L. Hale
-
 Birthday: 03/30/1992
-
 Missing Time: 07/12/2025, 02:15 PM
-
 Identity Card Number: 556789431267
-
 Height: 168
-
 Weight: 54
-
 Identifying Characteristic: Long blonde hair
-
 Last Known Outfit: White dress
-
 Medical Conditions: None
-
 Face picture: —
-
 Reporter Relationship: Sister
 
 7.
-
 Full Name: Robert J. Calvin
-
 Birthday: 09/19/1964
-
 Missing Time: 07/01/2025, 01:10 PM
-
 Identity Card Number: 765432109876
-
 Height: 182
-
 Weight: 78
-
 Identifying Characteristic: Graying hair
-
 Last Known Outfit: Formal suit
-
 Medical Conditions: Hypertension
-
 Face picture: —
-
 Reporter Relationship: Colleague
 
 8.
-
 Full Name: Marcus Eldrin
-
 Birthday: 12/14/1980
-
 Missing Time: 07/03/2025, 09:40 AM
-
 Identity Card Number: 334455667788
-
 Height: 180
-
 Weight: 76
-
 Identifying Characteristic: Glasses, short beard
-
 Last Known Outfit: Hoodie, jeans
-
 Medical Conditions: None
-
 Face picture: —
-
 Reporter Relationship: Friend
 
 9.
-
 Full Name: Olivia Crestwood
-
 Birthday: 05/11/1995
-
 Missing Time: 07/07/2025, 03:55 PM
-
 Identity Card Number: 998877665544
-
 Height: 165
-
 Weight: 53
-
 Identifying Characteristic: Freckles
-
 Last Known Outfit: Green blouse, black skirt
-
 Medical Conditions: Asthma
-
 Face picture: —
-
 Reporter Relationship: Co-worker
 
 10.
-
 Full Name: Jonathan Starver
-
 Birthday: 04/02/1979
-
 Missing Time: 06/29/2025, 08:30 PM
-
 Identity Card Number: 221133445566
-
 Height: 179
-
 Weight: 75
-
 Identifying Characteristic: Tattoo on forearm
-
 Last Known Outfit: Jacket, jeans
-
 Medical Conditions: None
-
 Face picture: —
-
 Reporter Relationship: Brother
+
+11.
+Full Name: Kylian Mbappo
+Birthday: 12/20/1998
+Missing Time: 07/14/2025, 07:45 PM
+Identity Card Number: 998877662345
+Height: 178 cm
+Weight: 73 kg
+Identifying Characteristic: Short athletic haircut, small scar above right eyebrow.
+Last Known Outfit: Black sports jacket, white T-shirt, gray jogger pants.
+Medical Conditions: None known.
+Face Picture: https://example.com/images/mbappo_profile.jpg
+Reporter Relationship: Friend

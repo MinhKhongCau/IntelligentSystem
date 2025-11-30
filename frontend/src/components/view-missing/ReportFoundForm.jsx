@@ -81,8 +81,8 @@ const ReportFoundForm = ({ missingDocumentId, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-lg ${modalSize} w-full max-h-[90vh] overflow-y-auto transition-all duration-300`}>
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+      <div className={`bg-white rounded-lg ${modalSize} w-full max-h-screen overflow-y-auto flex flex-col transition-all duration-300`}>
+        <div className="flex-shrink-0 bg-white border-b px-6 py-4 flex justify-between items-center">
           <h3 className="text-xl font-bold text-gray-800">
             {showAddArea ? 'Add Sighting Location' : 'Report Found Person'}
           </h3>
@@ -93,7 +93,7 @@ const ReportFoundForm = ({ missingDocumentId, onClose, onSuccess }) => {
             ×
           </button>
         </div>
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {showAddArea ? (
             <AddMissingArea 
               onAreaAdded={handleAreaAdded}

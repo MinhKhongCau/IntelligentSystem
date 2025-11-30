@@ -4,3 +4,8 @@ Face_recognition_Finding_missing_people/
 .vscode/
 Kafka/
 backend/target/
+Docs/Picture/
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.DS_Store

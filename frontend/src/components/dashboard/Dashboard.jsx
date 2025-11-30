@@ -94,7 +94,7 @@ const Dashboard = () => {
               <>
                 <p className="mb-5 text-base leading-relaxed text-gray-600">You are already registered as a care partner.</p>
                 <button 
-                  onClick={() => navigate('/manage-reported-documents')}
+                  onClick={() => navigate('/my-reports')}
                   className="w-full px-5 py-3 text-base font-medium text-white rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-none">
                   Manage Reports
                 </button>
@@ -123,7 +123,7 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {isCarePartner && (
+          {/* {isCarePartner && (
             <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
               <h3 className="mb-3 text-2xl font-semibold text-gray-800">My Reports</h3>
               <p className="mb-5 text-base leading-relaxed text-gray-600">View and edit your missing person reports</p>
@@ -134,7 +134,7 @@ const Dashboard = () => {
                 View My Reports
               </button>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

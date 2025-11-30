@@ -43,7 +43,7 @@ const PoliceDashboard = () => {
             </button>
           </div>
           
-          <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
+          {/* <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Map</h3>
             <p className="text-gray-600 text-base leading-relaxed mb-5">View map of reported sightings</p>
             <button 
@@ -52,7 +52,7 @@ const PoliceDashboard = () => {
             >
               View Map
             </button>
-          </div>
+          </div> */}
 
           {/* <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Surveillance</h3>
