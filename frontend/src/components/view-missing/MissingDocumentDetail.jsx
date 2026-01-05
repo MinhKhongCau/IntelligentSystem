@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import FaceComparisonModal from './FaceComparisonModal';
 import ReportFoundForm from './ReportFoundForm';
+import ReportMapModal from './ReportMapModal';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -19,6 +20,7 @@ const MissingDocumentDetail = () => {
     reportId: null
   });
   const [showReportForm, setShowReportForm] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
 
   useEffect(() => {
     fetchDocumentAndReports();
@@ -123,9 +125,6 @@ const MissingDocumentDetail = () => {
               src={`${API_BASE}${document.facePictureUrl}`}
               alt={document.name}
               className="w-full md:w-64 h-64 object-cover rounded-lg border-4 border-gray-300"
-              onError={(e) => {
-                e.target.src = '/default-avatar.png';
-              }}
             />
             <div className="flex-1">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">{document.name}</h2>
@@ -180,9 +179,20 @@ const MissingDocumentDetail = () => {
 
         {/* Reports Section */}
         <div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
-            Volunteer Reports ({reports.length})
-          </h2>
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Volunteer Reports ({reports.length})
+            </h2>
+            {reports.length > 0 && (
+              <button
+                onClick={() => setShowMapModal(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+              >
+                <span>🗺️</span>
+                Map Reports
+              </button>
+            )}
+          </div>
 
           {reports.length === 0 ? (
             <div className="bg-white rounded-lg p-10 text-center text-gray-600">
@@ -217,9 +227,6 @@ const MissingDocumentDetail = () => {
                           src={`${API_BASE}${report.sightingPicture}`}
                           alt="Sighting"
                           className="w-full h-48 object-cover"
-                          onError={(e) => {
-                            e.target.src = '/default-image.png';
-                          }}
                         />
                       </div>
                     )}
@@ -289,6 +296,14 @@ const MissingDocumentDetail = () => {
           }}
         />
       )}
+
+      {/* Report Map Modal */}
+      <ReportMapModal
+        isOpen={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        missingDocument={document}
+        reports={reports}
+      />
     </div>
   );
 };

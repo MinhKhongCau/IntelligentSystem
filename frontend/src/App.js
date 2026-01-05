@@ -32,6 +32,8 @@ import CCTVMonitor from './components/police/CCTVMonitor';
 import CCTVReportPage from './components/police/CCTVReportPage';
 import MyReports from './components/carePartner/MyReports';
 import MyReportEdit from './components/carePartner/MyReportEdit';
+import MyFoundCases from './components/volunteer/MyFoundCases';
+import EditFoundCase from './components/volunteer/EditFoundCase';
 function App() {
   return (
     <AuthProvider>
@@ -141,6 +143,16 @@ function App() {
             <Route path="/my-reports/edit/:id" element={
               <ProtectedRoute>
                 <MyReportEdit/>
+              </ProtectedRoute>
+            } />
+            <Route path="/my-found-cases" element={
+              <ProtectedRoute>
+                <MyFoundCases/>
+              </ProtectedRoute>
+            } />
+            <Route path="/my-found-cases/edit/:reportId" element={
+              <ProtectedRoute>
+                <EditFoundCase/>
               </ProtectedRoute>
             } />
           </Routes>

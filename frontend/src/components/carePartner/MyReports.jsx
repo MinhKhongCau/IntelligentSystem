@@ -136,9 +136,6 @@ const MyReports = () => {
                       src={`${API_BASE}${report.facePictureUrl}`}
                       alt={report.name}
                       className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        e.target.src = '/default-avatar.png';
-                      }}
                     />
                   </div>
                 )}

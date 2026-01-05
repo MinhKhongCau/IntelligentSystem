@@ -336,6 +336,38 @@ public class MissingDocumentController {
         }
     }
 
+    @GetMapping("/reports/single/{reportId}")
+    public ResponseEntity<?> getVolunteerReportById(@PathVariable Integer reportId) {
+        try {
+            // Find the report by searching through all missing documents
+            List<MissingDocumentResponseDTO> allDocuments = missingDocumentService.findAll();
+            com.intelligent.missingperson.dto.VolunteerReportDTO targetReport = null;
+            
+            for (MissingDocumentResponseDTO doc : allDocuments) {
+                List<com.intelligent.missingperson.dto.VolunteerReportDTO> reports = 
+                        missingDocumentService.getReportsByMissingDocumentId(doc.getId());
+                
+                for (com.intelligent.missingperson.dto.VolunteerReportDTO reportDTO : reports) {
+                    if (reportDTO.getId().equals(reportId)) {
+                        targetReport = reportDTO;
+                        break;
+                    }
+                }
+                if (targetReport != null) break;
+            }
+            
+            if (targetReport == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Volunteer report not found with id: " + reportId);
+            }
+            
+            return ResponseEntity.ok(targetReport);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error retrieving volunteer report: " + e.getMessage());
+        }
+    }
+
     @PostMapping(
         path = "/submit-missing-person",
         consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -413,6 +445,196 @@ public class MissingDocumentController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error marking document as found: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/reports/{reportId}")
+    public ResponseEntity<?> updateVolunteerReport(
+            @PathVariable Integer reportId,
+            @RequestParam(required = false) String description,
+            @RequestParam(value = "sightingPicture", required = false) String sightingPicture,
+            @RequestParam(required = false) Integer sightingAreaId,
+            @RequestParam(required = false) String latitude,
+            @RequestParam(required = false) String longitude
+    ) {
+        try {
+            // Find the report by searching through all missing documents
+            List<MissingDocumentResponseDTO> allDocuments = missingDocumentService.findAll();
+            com.intelligent.missingperson.entity.VolunteerReport targetReport = null;
+            
+            for (MissingDocumentResponseDTO doc : allDocuments) {
+                List<com.intelligent.missingperson.dto.VolunteerReportDTO> reports = 
+                        missingDocumentService.getReportsByMissingDocumentId(doc.getId());
+                
+                for (com.intelligent.missingperson.dto.VolunteerReportDTO reportDTO : reports) {
+                    if (reportDTO.getId().equals(reportId)) {
+                        // Get the actual entity
+                        Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(doc.getId());
+                        if (missingDocOpt.isPresent()) {
+                            // Find the report in the entity's reports
+                            targetReport = missingDocOpt.get().getVolunteerReports().stream()
+                                    .filter(r -> r.getId().equals(reportId))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
+                        break;
+                    }
+                }
+                if (targetReport != null) break;
+            }
+            
+            if (targetReport == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Volunteer report not found with id: " + reportId);
+            }
+            
+            // Update fields if provided
+            if (description != null && !description.isBlank()) {
+                targetReport.setDescription(description);
+            }
+            
+            if (sightingPicture != null) {
+                targetReport.setSightingPicture(sightingPicture);
+            }
+            
+            if (sightingAreaId != null) {
+                Optional<Area> areaOpt = areaService.findById(sightingAreaId);
+                if (areaOpt.isEmpty()) {
+                    return ResponseEntity.badRequest()
+                            .body("Area not found with id: " + sightingAreaId);
+                }
+                targetReport.setSightingArea(areaOpt.get());
+            }
+            
+            if (latitude != null && !latitude.isBlank()) {
+                try {
+                    targetReport.setLatitude(new java.math.BigDecimal(latitude));
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest().body("Invalid latitude format");
+                }
+            }
+            
+            if (longitude != null && !longitude.isBlank()) {
+                try {
+                    targetReport.setLongitude(new java.math.BigDecimal(longitude));
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest().body("Invalid longitude format");
+                }
+            }
+            
+            // Update the report time to current time
+            targetReport.setReportTime(LocalDateTime.now());
+            
+            missingDocumentService.saveVolunteerReport(targetReport);
+            
+            return ResponseEntity.ok("Volunteer report updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error updating volunteer report: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/reports/{reportId}/status")
+    public ResponseEntity<?> updateVolunteerReportStatus(
+            @PathVariable Integer reportId,
+            @RequestParam String status
+    ) {
+        try {
+            // Validate status
+            if (!List.of("Missing", "Found", "Rejected").contains(status)) {
+                return ResponseEntity.badRequest()
+                        .body("Invalid status. Allowed values: Missing, Found, Rejected");
+            }
+
+            // Find the report by searching through all missing documents
+            List<MissingDocumentResponseDTO> allDocuments = missingDocumentService.findAll();
+            com.intelligent.missingperson.entity.VolunteerReport targetReport = null;
+            
+            for (MissingDocumentResponseDTO doc : allDocuments) {
+                List<com.intelligent.missingperson.dto.VolunteerReportDTO> reports = 
+                        missingDocumentService.getReportsByMissingDocumentId(doc.getId());
+                
+                for (com.intelligent.missingperson.dto.VolunteerReportDTO reportDTO : reports) {
+                    if (reportDTO.getId().equals(reportId)) {
+                        // Get the actual entity
+                        Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(doc.getId());
+                        if (missingDocOpt.isPresent()) {
+                            // Find the report in the entity's reports
+                            targetReport = missingDocOpt.get().getVolunteerReports().stream()
+                                    .filter(r -> r.getId().equals(reportId))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
+                        break;
+                    }
+                }
+                if (targetReport != null) break;
+            }
+            
+            if (targetReport == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Volunteer report not found with id: " + reportId);
+            }
+            
+            targetReport.setReportStatus(status);
+            
+            missingDocumentService.saveVolunteerReport(targetReport);
+            
+            return ResponseEntity.ok("Volunteer report status updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error updating volunteer report status: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/reports/{reportId}")
+    public ResponseEntity<?> deleteVolunteerReport(@PathVariable Integer reportId) {
+        try {
+            // Find the report by searching through all missing documents
+            List<MissingDocumentResponseDTO> allDocuments = missingDocumentService.findAll();
+            com.intelligent.missingperson.entity.VolunteerReport targetReport = null;
+            
+            for (MissingDocumentResponseDTO doc : allDocuments) {
+                List<com.intelligent.missingperson.dto.VolunteerReportDTO> reports = 
+                        missingDocumentService.getReportsByMissingDocumentId(doc.getId());
+                
+                for (com.intelligent.missingperson.dto.VolunteerReportDTO reportDTO : reports) {
+                    if (reportDTO.getId().equals(reportId)) {
+                        // Get the actual entity
+                        Optional<MissingDocument> missingDocOpt = missingDocumentService.findById(doc.getId());
+                        if (missingDocOpt.isPresent()) {
+                            // Find the report in the entity's reports
+                            targetReport = missingDocOpt.get().getVolunteerReports().stream()
+                                    .filter(r -> r.getId().equals(reportId))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
+                        break;
+                    }
+                }
+                if (targetReport != null) break;
+            }
+            
+            if (targetReport == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Volunteer report not found with id: " + reportId);
+            }
+            
+            // Only allow deletion if report status is "Missing" (not yet processed)
+            if (!"Missing".equals(targetReport.getReportStatus())) {
+                return ResponseEntity.badRequest()
+                        .body("Can only delete reports with 'Missing' status. Current status: " + targetReport.getReportStatus());
+            }
+            
+            // Remove the report from the missing document's reports collection
+            MissingDocument missingDoc = targetReport.getMissingDocument();
+            missingDoc.getVolunteerReports().remove(targetReport);
+            missingDocumentService.save(missingDoc);
+            
+            return ResponseEntity.ok("Volunteer report deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error deleting volunteer report: " + e.getMessage());
         }
     }
 

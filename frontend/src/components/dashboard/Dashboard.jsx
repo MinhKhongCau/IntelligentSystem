@@ -28,7 +28,7 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-3 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
             <h3 className="mb-3 text-2xl font-semibold text-gray-800">Missing Persons</h3>
             <p className="mb-5 text-base leading-relaxed text-gray-600">Manage and view missing person reports</p>
@@ -90,7 +90,7 @@ const Dashboard = () => {
 
         {isCarePartner ? (
           <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
-            <h3 className="mb-3 text-2xl font-semibold text-gray-800">Register Care Partner</h3>
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">My report</h3>
               <>
                 <p className="mb-5 text-base leading-relaxed text-gray-600">You are already registered as a care partner.</p>
                 <button 
@@ -111,6 +111,17 @@ const Dashboard = () => {
               </>
           </div>
           )}
+
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">My Found Cases</h3>
+            <p className="mb-5 text-base leading-relaxed text-gray-600">View your volunteer reports for found missing persons</p>
+            <button 
+              onClick={() => navigate('/my-found-cases')}
+              className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
+            >
+              View Found Cases
+            </button>
+          </div>
 
           <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
             <h3 className="mb-3 text-2xl font-semibold text-gray-800">My Profile</h3>
