@@ -2,6 +2,7 @@ dataset/
 __pycache__/
 Face_recognition_Finding_missing_people/
 .vscode/
+.kiro/
 Kafka/
 backend/target/
 Docs/Picture/
