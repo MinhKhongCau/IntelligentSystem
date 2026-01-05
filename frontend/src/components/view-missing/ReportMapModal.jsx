@@ -89,13 +89,8 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
     }
   }, [isOpen, missingDocument, reports]);
 
-  const getMarkerColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'verified': return '#16a34a';
-      case 'pending': return '#eab308';
-      case 'rejected': return '#dc2626';
-      default: return '#6b7280';
-    }
+  const getMarkerColor = () => {
+    return '#3b82f6'; // Blue color for all reports
   };
 
   const formatLocation = (area) => {
@@ -159,22 +154,10 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
                 <span>Missing Location</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-green-600 flex items-center justify-center">
-                  <span className="text-white text-xs">#</span>
+                <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">R</span>
                 </div>
-                <span>Verified Report</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-yellow-600 flex items-center justify-center">
-                  <span className="text-white text-xs">#</span>
-                </div>
-                <span>Pending Report</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
-                  <span className="text-white text-xs">#</span>
-                </div>
-                <span>Rejected Report</span>
+                <span>Report Location</span>
               </div>
             </div>
           </div>
@@ -213,36 +196,40 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
               )}
 
               {/* Report Markers */}
-              {reports.map((report, index) => {
-                if (!report.latitude || !report.longitude) return null;
+              {reports && reports.length > 0 && reports.map((report, index) => {
+                // Show all reports, even without coordinates (use sightingArea coordinates if available)
+                let lat, lng;
                 
-                const markerColor = getMarkerColor(report.reportStatus);
+                if (report.latitude && report.longitude) {
+                  lat = parseFloat(report.latitude);
+                  lng = parseFloat(report.longitude);
+                } else if (report.sightingArea?.latitude && report.sightingArea?.longitude) {
+                  lat = parseFloat(report.sightingArea.latitude);
+                  lng = parseFloat(report.sightingArea.longitude);
+                } else {
+                  // Skip this report if no coordinates available
+                  return null;
+                }
+                
+                const markerColor = getMarkerColor();
                 
                 return (
                   <Marker
-                    key={report.id}
-                    position={[parseFloat(report.latitude), parseFloat(report.longitude)]}
-                    icon={createCustomIcon(markerColor, (index + 1).toString())}
+                    key={`report-${report.id}-${index}`}
+                    position={[lat, lng]}
+                    icon={createCustomIcon(markerColor, 'R')}
                   >
                     <Popup>
                       <div className="p-2 max-w-xs">
                         <h3 className="font-semibold text-blue-600 mb-2">Report #{report.id}</h3>
-                        <p><strong>Reporter:</strong> {report.volunteerName}</p>
-                        <p><strong>Status:</strong> 
-                          <span 
-                            className="px-2 py-1 rounded text-xs ml-1"
-                            style={{ 
-                              backgroundColor: `${markerColor}20`, 
-                              color: markerColor 
-                            }}
-                          >
-                            {report.reportStatus || 'Pending'}
-                          </span>
-                        </p>
+                        <p><strong>Reporter:</strong> {report.volunteerName || 'Unknown'}</p>
                         <p><strong>Time:</strong> {new Date(report.reportTime).toLocaleString('vi-VN')}</p>
                         <p><strong>Location:</strong> {formatLocation(report.sightingArea)}</p>
                         {report.description && (
                           <p><strong>Description:</strong> {report.description}</p>
+                        )}
+                        {(report.latitude && report.longitude) && (
+                          <p><strong>Coordinates:</strong> {report.latitude}, {report.longitude}</p>
                         )}
                       </div>
                     </Popup>
