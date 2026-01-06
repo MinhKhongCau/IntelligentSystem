@@ -35,6 +35,8 @@ import MyReportEdit from './components/carePartner/MyReportEdit';
 import MyFoundCases from './components/volunteer/MyFoundCases';
 import EditFoundCase from './components/volunteer/EditFoundCase';
 import ManageCamera from './components/manage-camera/ManageCameras';
+import AllVolunteers from './components/volunteers/AllVolunteers';
+import VolunteerDetail from './components/volunteers/VolunteerDetail';
 function App() {
   return (
     <AuthProvider>
@@ -159,6 +161,16 @@ function App() {
             <Route path="/manage-camera" element={
               <ProtectedRoute>
                 <ManageCamera/>
+              </ProtectedRoute>
+            } />
+            <Route path="/volunteers" element={
+              <ProtectedRoute>
+                <AllVolunteers/>
+              </ProtectedRoute>
+            } />
+            <Route path="/volunteers/:id" element={
+              <ProtectedRoute>
+                <VolunteerDetail/>
               </ProtectedRoute>
             } />
           </Routes>

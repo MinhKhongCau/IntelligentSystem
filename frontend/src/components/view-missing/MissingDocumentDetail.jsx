@@ -217,12 +217,22 @@ const MissingDocumentDetail = () => {
                 <div key={report.id} className="bg-white rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
                   <div className="flex justify-between items-start mb-4 pb-4 border-b-2 border-gray-100">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        Report #{report.id}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        By: <strong>{report.volunteerName}</strong>
-                      </p>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                          Report #{report.id}
+                        </h3>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm text-gray-600">
+                            By: <strong>{report.volunteerName}</strong>
+                          </p>
+                          {report.volunteerId && (
+                            <button
+                              onClick={() => navigate(`/volunteers/${report.volunteerId}`)}
+                              className="text-sm px-2 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                              View Volunteer
+                            </button>
+                          )}
+                        </div>
                     </div>
                     <span className={getStatusBadgeClass(report.reportStatus)}>
                       {report.reportStatus || 'Pending'}
