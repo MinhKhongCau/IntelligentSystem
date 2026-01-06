@@ -5,7 +5,7 @@ import {
 } from "react-router-dom";
 
 import { AuthProvider } from './contexts/AuthContext';
-import MissingList from './components/find-loc/MissingList';
+import LocationsMissingList from "./components/find-loc/locations-missinglist";
 // import SearchButton from './components/find_loc/SearchButton';
 import Formmissing from './components/missing-form/Formmissing';
 import Navbar from './components/auth/Navbar';
@@ -34,6 +34,7 @@ import MyReports from './components/carePartner/MyReports';
 import MyReportEdit from './components/carePartner/MyReportEdit';
 import MyFoundCases from './components/volunteer/MyFoundCases';
 import EditFoundCase from './components/volunteer/EditFoundCase';
+import ManageCamera from './components/manage-camera/ManageCameras';
 function App() {
   return (
     <AuthProvider>
@@ -77,7 +78,7 @@ function App() {
             } />
             <Route path="/locations" element={
               <ProtectedRoute>
-                <MissingList/>
+                <LocationsMissingList/>
               </ProtectedRoute>
             } />
             <Route path="/register-care-partner" element={
@@ -153,6 +154,11 @@ function App() {
             <Route path="/my-found-cases/edit/:reportId" element={
               <ProtectedRoute>
                 <EditFoundCase/>
+              </ProtectedRoute>
+            } />
+            <Route path="/manage-camera" element={
+              <ProtectedRoute>
+                <ManageCamera/>
               </ProtectedRoute>
             } />
           </Routes>

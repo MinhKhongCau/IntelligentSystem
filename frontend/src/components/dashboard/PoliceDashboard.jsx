@@ -86,6 +86,16 @@ const PoliceDashboard = () => {
               Manage Forms
             </button>
           </div>
+          <div className="p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 hover:translate-y-[-5px] hover:shadow-2xl">
+            <h3 className="mb-3 text-2xl font-semibold text-gray-800">My Found Cases</h3>
+            <p className="mb-5 text-base leading-relaxed text-gray-600">View your volunteer reports for found missing persons</p>
+            <button 
+              onClick={() => navigate('/my-found-cases')}
+              className="w-full px-5 py-3 text-base font-medium text-white rounded-lg cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg"
+            >
+              View Found Cases
+            </button>
+          </div>
           <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Manage CCTV</h3>
             <p className="text-gray-600 text-base leading-relaxed mb-5">Find missing list detect missing person from cctv</p>
@@ -94,6 +104,16 @@ const PoliceDashboard = () => {
               className="w-full py-3 px-5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg text-base font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all"
             >
               CCTV Monitor
+            </button>
+          </div>
+          <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
+            <h3 className="text-gray-800 text-2xl font-semibold mb-3">Manage Cameras</h3>
+            <p className="text-gray-600 text-base leading-relaxed mb-5">Add, edit, remove and view camera streams</p>
+            <button
+              onClick={() => navigate('/manage-camera')}
+              className="w-full py-3 px-5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg text-base font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all"
+            >
+              Manage Cameras
             </button>
           </div>
           {isCarePartner ? (

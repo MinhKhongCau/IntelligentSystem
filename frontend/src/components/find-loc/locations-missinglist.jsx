@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import Missingcard from './Missingcard';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import axios from 'axios';
@@ -13,9 +12,37 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
+// Custom marker icons (reusable)
+const createCustomIcon = (color, text) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `
+      <div style="
+        background-color: ${color};
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: ${text.length > 1 ? '10px' : '12px'};
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      ">
+        ${text}
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  });
+};
+
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-const MissingList = () => {
+const LocationsMissingList = () => {
   const [items, setItems] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -31,11 +58,11 @@ const MissingList = () => {
         const res = await axios.get(`${API_BASE}/api/missing-documents`, {
           params: searchTerm ? { name: searchTerm } : {}
         });
-        
+
         setItems(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+        console.error('Error fetching data:', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
         setItems([]);
       } finally {
         setLoading(false);
@@ -67,7 +94,13 @@ const MissingList = () => {
   return (
     <div className="bg-cover bg-no-repeat w-screen overflow-x-hidden min-h-screen" 
          style={{ backgroundImage: "url('/footer-bg.png')" }}>
-      
+      {/* Small inline styles for custom marker and legend */}
+      <style>
+        {`
+          .custom-marker { background: transparent !important; border: none !important; }
+        `}
+      </style>
+
       {/* Header */}
       <div className="font-sans font-bold text-center mt-24 mb-20 flex items-center justify-center">
         <div className="flex">
@@ -110,6 +143,20 @@ const MissingList = () => {
         </div>
       </div>
 
+      {/* Legend */}
+      <div className="px-6 mb-4">
+        <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-red-600" />
+            <span>Missing Location</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-green-600" />
+            <span>Found Location</span>
+          </div>
+        </div>
+      </div>
+
       {/* Map Container */}
       <div className="map-container" style={{ height: '500px', width: '90%', margin: '0 auto 2rem auto', border: '1px solid #ccc', borderRadius: '8px' }}>
         <MapContainer 
@@ -122,23 +169,49 @@ const MissingList = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
           />
           
-          {items.map((item) =>
-            item.missingArea?.latitude && item.missingArea?.longitude ? (
-              <Marker 
-                key={item.id} 
-                position={[
-                  parseFloat(item.missingArea.latitude),
-                  parseFloat(item.missingArea.longitude) 
-                ]}
-              >
-                <Popup>
-                  <b>{item.name}</b>
-                  <br />
-                  Last seen: {item.missingArea.province}, {item.missingArea.country}
-                </Popup>
-              </Marker>
-            ) : null
-          )}
+          {items.map((item) => (
+            <React.Fragment key={item.id}>
+              {/* Missing location marker */}
+              {item.missingArea?.latitude && item.missingArea?.longitude ? (
+                <Marker 
+                  key={`missing-${item.id}`} 
+                  position={[
+                    parseFloat(item.missingArea.latitude),
+                    parseFloat(item.missingArea.longitude)
+                  ]}
+                  icon={createCustomIcon('#dc2626', 'M')}
+                >
+                  <Popup>
+                    <b>{item.name}</b>
+                    <br />
+                    Last seen: {item.missingArea.province}, {item.missingArea.country}
+                  </Popup>
+                </Marker>
+              ) : null}
+
+              {/* Found location marker: assume `foundArea` contains coordinates when case was found */}
+              {item.foundArea?.latitude && item.foundArea?.longitude ? (
+                <Marker 
+                  key={`found-${item.id}`} 
+                  position={[
+                    parseFloat(item.foundArea.latitude),
+                    parseFloat(item.foundArea.longitude)
+                  ]}
+                  icon={createCustomIcon('#16a34a', 'F')}
+                >
+                  <Popup>
+                    <div>
+                      <b>{item.name} (Found)</b>
+                      <br />
+                      Found at: {item.foundArea.province || item.foundArea.district || item.foundArea.commune}
+                      <br />
+                      Time: {item.foundTime ? new Date(item.foundTime).toLocaleString('vi-VN') : 'Unknown'}
+                    </div>
+                  </Popup>
+                </Marker>
+              ) : null}
+            </React.Fragment>
+          ))}
         </MapContainer>
       </div>
 
@@ -152,10 +225,26 @@ const MissingList = () => {
           <div className="text-center p-8 text-lg text-gray-700">No missing persons found.</div>
         ) : (
           items.map((element) => (
-            <Missingcard
-              key={element.id}
-              document={element}
-            />
+            // Reuse existing Missingcard component if available (same location in tree)
+            <div key={element.id} className="m-2 w-full max-w-xl">
+              <div className="p-4 border rounded-md bg-white shadow-sm">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-semibold text-lg">{element.name}</div>
+                    <div className="text-sm text-gray-600">ID: {element.id}</div>
+                  </div>
+                  <div className="text-sm text-gray-500">{element.status || ''}</div>
+                </div>
+                <div className="mt-2 text-sm text-gray-700">
+                  {element.missingArea?.province && (
+                    <div>Last seen: {element.missingArea.province}, {element.missingArea.country}</div>
+                  )}
+                  {element.foundArea?.province && (
+                    <div className="text-green-600">Found at: {element.foundArea.province}</div>
+                  )}
+                </div>
+              </div>
+            </div>
           ))
         )}
       </div>
@@ -163,4 +252,4 @@ const MissingList = () => {
   );
 };
 
-export default MissingList;
+export default LocationsMissingList;

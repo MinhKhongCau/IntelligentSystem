@@ -149,6 +149,12 @@ const CCTVMonitor = () => {
       formData.append('image', searchImage);
       formData.append('camera_ip', searchCameraIp);
       formData.append('threshold', searchThreshold);
+      // If a missing person was selected, include their name and id so the
+      // Flask server can report full information to the backend
+      if (selectedMissingPerson) {
+        formData.append('person_name', selectedMissingPerson.name);
+        formData.append('id_missing_document', selectedMissingPerson.id);
+      }
 
       const response = await axios.post(
         `${VIDEO_STREAM_URL}/api/search/person-in-video`,

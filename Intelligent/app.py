@@ -6,6 +6,7 @@ import logging
 import subprocess
 import os
 import time
+import requests
 from utils import utils
 
 from video_consumer import VideoStreamConsumer
@@ -571,6 +572,12 @@ def search_person_in_video():
         
         camera_ip = request.form['camera_ip']
         threshold = float(request.form.get('threshold', 0.6))
+
+        # Optional: person info provided by the frontend when an image is supplied
+        # Frontend will send `person_name` and `id_missing_document` so we can
+        # attach full information into the Spring report payload.
+        person_name = request.form.get('person_name')
+        id_missing_document = request.form.get('id_missing_document') or request.form.get('missingDocumentId')
         
         # Validate IP format
         ip_parts = camera_ip.split('.')
@@ -629,7 +636,42 @@ def search_person_in_video():
                 return jsonify({'error': result['error']}), 422
             else:
                 return jsonify({'error': result['error']}), 500
-        
+
+
+        # Before returning, report detections to Spring Boot (if any)
+        try:
+            SPRING_REPORT_URL = os.environ.get('SPRING_REPORT_URL', 'http://backend-app:8080/api/cctv/report')
+            detections = result.get('detections', []) or []
+            for det in detections:
+                # Prefer explicit form-provided missing id / person name when available
+                missing_id = id_missing_document or det.get('missingDocumentId') or det.get('missing_document_id') or det.get('person_id') or det.get('personId')
+                confident = det.get('confidence') or det.get('confident') or det.get('distance') or det.get('similarity')
+                detection_log = det.get('detection_log') or det.get('log') or ''
+                detect_picture = det.get('image') or det.get('detect_picture') or None
+
+                payload = {
+                    'cctvIp': camera_ip,
+                    'missingDocumentId': missing_id,
+                    'personName': person_name or det.get('person_name') or det.get('name'),
+                    'detail': json.dumps(det),
+                    'confident': float(confident) if confident is not None else None,
+                    'detectLog': detection_log,
+                    'detectPicture': detect_picture
+                }
+                logging.warning(f"Start reporting detection to Spring: {payload}")
+
+                try:
+                    # Send report to Spring and log response; increase timeout
+                    resp = requests.post(SPRING_REPORT_URL, json=payload, timeout=5)
+                    if resp.status_code >= 400:
+                        logging.warning(f"Spring report POST returned {resp.status_code}: {resp.text}")
+                    else:
+                        logging.debug(f"Spring report POST success: {resp.status_code}")
+                except requests.RequestException as e:
+                    logging.exception("Failed to POST detection to Spring report API")
+        except Exception as e:
+            logging.debug(f"Error while reporting detections to Spring: {e}")
+
         # Return results
         return jsonify({
             'success': True,

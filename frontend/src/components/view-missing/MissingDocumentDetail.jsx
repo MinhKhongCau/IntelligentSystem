@@ -12,6 +12,7 @@ const MissingDocumentDetail = () => {
   const navigate = useNavigate();
   const [document, setDocument] = useState(null);
   const [reports, setReports] = useState([]);
+  const [cctvReports, setCctvReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comparisonModal, setComparisonModal] = useState({
@@ -43,6 +44,18 @@ const MissingDocumentDetail = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setReports(reportsResponse.data);
+
+      // Fetch CCTV detection reports for this missing case
+      try {
+        const cctvResp = await axios.get(`${API_BASE}/api/cctv/reports/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setCctvReports(Array.isArray(cctvResp.data) ? cctvResp.data : []);
+      } catch (err) {
+        // non-fatal
+        console.debug('No cctv reports or failed to fetch them', err);
+        setCctvReports([]);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load document details');
@@ -272,6 +285,38 @@ const MissingDocumentDetail = () => {
               ))}
             </div>
           )}
+          {/* CCTV detection reports */}
+          <div className="mt-8">
+            <h3 className="text-xl font-semibold mb-4">CCTV Detection Reports ({cctvReports.length})</h3>
+            {cctvReports.length === 0 ? (
+              <div className="bg-white rounded-lg p-6 text-gray-600">No CCTV detections found for this case.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {cctvReports.map(r => (
+                  <div key={r.id} className="bg-white p-4 rounded shadow-sm">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold">{r.cctvName || `Camera ${r.cctvId || ''}`}</div>
+                        <div className="text-sm text-gray-600">Reported at: {r.timeReport ? new Date(r.timeReport).toLocaleString('vi-VN') : 'N/A'}</div>
+                      </div>
+                      <div className="text-sm text-gray-700">Confidence: {r.confident ?? 'N/A'}</div>
+                    </div>
+                    {r.detectPicture && (
+                      <div className="mt-3">
+                        <img src={r.detectPicture.startsWith('http') ? r.detectPicture : `${API_BASE}${r.detectPicture}`} alt="detection" className="w-full h-48 object-cover rounded" />
+                      </div>
+                    )}
+                    {r.detail && (
+                      <div className="mt-3 text-sm text-gray-700">
+                        <strong>Detail:</strong>
+                        <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-2 rounded mt-1">{typeof r.detail === 'string' ? r.detail : JSON.stringify(r.detail)}</pre>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
