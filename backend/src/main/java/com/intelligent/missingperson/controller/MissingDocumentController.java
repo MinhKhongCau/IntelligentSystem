@@ -53,16 +53,27 @@ public class MissingDocumentController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String name) { // This name is for filtering, not the DTO field
         try {
-            List<MissingDocumentResponseDTO> documents;
-            if (name != null && !name.isBlank()) {
-                documents = missingDocumentService.findByFullNameContaining(name);
-            } else {
-                documents = missingDocumentService.findAll();
-            }
-            return ResponseEntity.ok(documents); // This will now return List<MissingDocumentResponseDTO>
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
+            org.springframework.data.domain.Page<com.intelligent.missingperson.dto.MissingDocumentResponseDTO> paged = missingDocumentService.findAllPaged(pageable, name);
+            return ResponseEntity.ok(paged);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error retrieving documents.");
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllMissingDocumentsNoPage(@RequestParam(required = false) String name) {
+        try {
+            if (name != null && !name.isBlank()) {
+                java.util.List<com.intelligent.missingperson.dto.MissingDocumentResponseDTO> list = missingDocumentService.findByFullNameContaining(name);
+                return ResponseEntity.ok(list);
+            } else {
+                java.util.List<com.intelligent.missingperson.dto.MissingDocumentResponseDTO> list = missingDocumentService.findAll();
+                return ResponseEntity.ok(list);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving all documents: " + e.getMessage());
         }
     }
 
@@ -286,15 +297,20 @@ public class MissingDocumentController {
     }
 
     @GetMapping("/subscriptions/{volunteerId}")
-    public ResponseEntity<?> getSubscribedDocuments(@PathVariable Integer volunteerId) {
+    public ResponseEntity<?> getSubscribedDocuments(
+            @PathVariable Integer volunteerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
         try {
             Optional<Volunteer> volunteerOpt = volunteerService.findById(volunteerId);
             if (volunteerOpt.isEmpty()) {
                 return ResponseEntity.badRequest().body("Volunteer not found with id: " + volunteerId);
             }
-            
-            List<MissingDocumentResponseDTO> subscribedDocuments = missingDocumentService.findSubscribedDocumentsByVolunteerId(volunteerId);
-            return ResponseEntity.ok(subscribedDocuments);
+
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
+            org.springframework.data.domain.Page<MissingDocumentResponseDTO> paged = missingDocumentService.findSubscribedDocumentsByVolunteerIdPaged(volunteerId, pageable);
+            return ResponseEntity.ok(paged);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error retrieving subscribed documents: " + e.getMessage());
@@ -333,6 +349,25 @@ public class MissingDocumentController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error retrieving reports: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/reports/volunteer/{volunteerId}")
+    public ResponseEntity<?> getReportsByVolunteerId(
+            @PathVariable Integer volunteerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            Optional<Volunteer> volunteerOpt = volunteerService.findById(volunteerId);
+            if (volunteerOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("Volunteer not found with id: " + volunteerId);
+            }
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
+            org.springframework.data.domain.Page<com.intelligent.missingperson.dto.VolunteerReportDTO> paged = missingDocumentService.getReportsByVolunteerIdPaged(volunteerId, pageable);
+            return ResponseEntity.ok(paged);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving volunteer reports: " + e.getMessage());
         }
     }
 

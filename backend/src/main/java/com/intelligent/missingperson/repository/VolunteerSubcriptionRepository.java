@@ -9,6 +9,8 @@ import com.intelligent.missingperson.entity.VolunteerSubscription;
 import com.intelligent.missingperson.entity.VolunteerSubscriptionId;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +18,9 @@ public interface VolunteerSubcriptionRepository extends JpaRepository<VolunteerS
     
     @Query("SELECT vs FROM VolunteerSubscription vs WHERE vs.id.volunteerId = :volunteerId AND vs.isActive = true")
     List<VolunteerSubscription> findByVolunteerIdAndIsActiveTrue(@Param("volunteerId") Integer volunteerId);
+
+    @Query("SELECT vs FROM VolunteerSubscription vs WHERE vs.id.volunteerId = :volunteerId AND vs.isActive = true")
+    Page<VolunteerSubscription> findByVolunteerIdAndIsActiveTrue(@Param("volunteerId") Integer volunteerId, Pageable pageable);
     
     @Query("SELECT vs FROM VolunteerSubscription vs WHERE vs.id.missingDocumentId = :missingDocumentId AND vs.id.volunteerId = :volunteerId AND vs.isActive = true")
     Optional<VolunteerSubscription> findByMissingDocumentIdAndVolunteerIdAndIsActiveTrue(

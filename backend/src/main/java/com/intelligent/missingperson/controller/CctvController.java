@@ -31,9 +31,18 @@ public class CctvController {
     private final com.intelligent.missingperson.service.DetectPictureService detectPictureService;
 
     @GetMapping
-    public ResponseEntity<List<CctvDTO>> getAllCameras() {
-        List<CctvDTO> cameras = cctvService.getAllCameras();
-        return ResponseEntity.ok(cameras);
+    public ResponseEntity<?> getAllCameras(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search
+    ) {
+        try {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
+            org.springframework.data.domain.Page<com.intelligent.missingperson.dto.CctvDTO> paged = cctvService.getCamerasPaged(pageable, search);
+            return ResponseEntity.ok(paged);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving cameras: " + e.getMessage());
+        }
     }
 
     @GetMapping("/active")

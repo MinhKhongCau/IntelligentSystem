@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,22 @@ public class CctvService {
         return cctvRepository.findAllActiveCameras().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CctvDTO> getCamerasPaged(Pageable pageable, String search) {
+        Page<Cctv> page;
+        if (search != null && !search.isBlank()) {
+            // Search by name or IP
+            page = cctvRepository.findByNameContaining(search, pageable);
+            if (page == null || page.getTotalElements() == 0) {
+                page = cctvRepository.findByIpContaining(search, pageable);
+            }
+        } else {
+            page = cctvRepository.findAll(pageable);
+        }
+        List<CctvDTO> dtos = page.stream().map(this::convertToDTO).toList();
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 
     @Transactional(readOnly = true)

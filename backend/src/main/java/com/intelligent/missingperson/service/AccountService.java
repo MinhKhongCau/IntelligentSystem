@@ -45,6 +45,13 @@ public class AccountService {
         return accountRepository.findAll(pageable);
     }
 
+    public Page<Account> findAll(Pageable pageable, String search) {
+        if (search == null || search.isBlank()) {
+            return accountRepository.findAll(pageable);
+        }
+        return accountRepository.findByFullNameContainingIgnoreCaseOrUsernameContainingIgnoreCase(search, search, pageable);
+    }
+
     public List<Account> findAll() {
         return accountRepository.findAll();
     }

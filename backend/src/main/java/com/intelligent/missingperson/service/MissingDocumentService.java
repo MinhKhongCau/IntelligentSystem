@@ -26,6 +26,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,18 @@ public class MissingDocumentService {
         return missingDocumentRepository.findAll().stream()
                 .map(this::mapToMissingDocumentResponseDTO)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    public Page<MissingDocumentResponseDTO> findAllPaged(Pageable pageable, String name) {
+        if (name != null && !name.isBlank()) {
+            Page<MissingDocument> page = missingDocumentRepository.findByFullNameContaining(name, pageable);
+            List<MissingDocumentResponseDTO> dtos = page.stream().map(this::mapToMissingDocumentResponseDTO).toList();
+            return new PageImpl<>(dtos, pageable, page.getTotalElements());
+        } else {
+            Page<MissingDocument> page = missingDocumentRepository.findAll(pageable);
+            List<MissingDocumentResponseDTO> dtos = page.stream().map(this::mapToMissingDocumentResponseDTO).toList();
+            return new PageImpl<>(dtos, pageable, page.getTotalElements());
+        }
     }
 
     public Optional<MissingDocument> findById(Integer id) {
@@ -158,6 +173,14 @@ public class MissingDocumentService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    public Page<MissingDocumentResponseDTO> findSubscribedDocumentsByVolunteerIdPaged(Integer volunteerId, Pageable pageable) {
+        Page<com.intelligent.missingperson.entity.VolunteerSubscription> page = volunteerSubcriptionRepository.findByVolunteerIdAndIsActiveTrue(volunteerId, pageable);
+        List<MissingDocumentResponseDTO> dtos = page.stream()
+                .map(subscription -> mapToMissingDocumentResponseDTO(subscription.getMissingDocument()))
+                .toList();
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
+    }
+
     public boolean unsubscribeVolunteer(Integer missingDocumentId, Integer volunteerId) {
         Optional<VolunteerSubscription> subscriptionOpt = volunteerSubcriptionRepository
                 .findByMissingDocumentIdAndVolunteerIdAndIsActiveTrue(missingDocumentId, volunteerId);
@@ -176,6 +199,14 @@ public class MissingDocumentService {
         return reports.stream()
                 .map(this::convertReportToDTO)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    public Page<com.intelligent.missingperson.dto.VolunteerReportDTO> getReportsByVolunteerIdPaged(Integer volunteerId, Pageable pageable) {
+        Page<VolunteerReport> page = volunteerReportRepository.findByVolunteerId(volunteerId, pageable);
+        List<com.intelligent.missingperson.dto.VolunteerReportDTO> dtos = page.stream()
+                .map(this::convertReportToDTO)
+                .toList();
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 
     private VolunteerReportDTO convertReportToDTO(VolunteerReport report) {

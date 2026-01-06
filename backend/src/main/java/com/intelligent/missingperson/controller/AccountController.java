@@ -47,8 +47,9 @@ public class AccountController {
         String username = authentication.getName();
         Optional<Account> optAccount = accountService.findByUsername(username);
         if (optAccount.isPresent() && policeService.existsById(optAccount.get().getId())) {
-            List<Account> accounts = accountService.findAll();
-            List<AccountDTO> accountDTOs = accounts.stream().map(account -> {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
+            org.springframework.data.domain.Page<com.intelligent.missingperson.entity.Account> paged = accountService.findAll(pageable, name);
+            List<AccountDTO> accountDTOs = paged.stream().map(account -> {
                 return AccountDTO.builder()
                         .id(account.getId())
                         .username(account.getUsername())
@@ -62,7 +63,13 @@ public class AccountController {
                         .accountType(account.getAccountType())
                         .build();
             }).toList();
-            return ResponseEntity.ok(accountDTOs);
+            java.util.Map<String, Object> resp = new java.util.HashMap<>();
+            resp.put("content", accountDTOs);
+            resp.put("page", paged.getNumber());
+            resp.put("size", paged.getSize());
+            resp.put("totalElements", paged.getTotalElements());
+            resp.put("totalPages", paged.getTotalPages());
+            return ResponseEntity.ok(resp);
         }
         return ResponseEntity.status(403).body("Access denied");
     }
