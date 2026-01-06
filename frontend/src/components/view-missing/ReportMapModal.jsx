@@ -39,7 +39,9 @@ const createCustomIcon = (color, text) => {
   });
 };
 
-const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+const ReportMapModal = ({ isOpen, onClose, missingDocument, reports, cctvReports = [] }) => {
   const [mapCenter, setMapCenter] = useState([16.0583, 108.2772]); // Default Vietnam center
   const [mapZoom, setMapZoom] = useState(10);
 
@@ -60,6 +62,16 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
       reports.forEach(report => {
         if (report.latitude && report.longitude) {
           coordinates.push([parseFloat(report.latitude), parseFloat(report.longitude)]);
+        }
+      });
+
+      // Add CCTV coordinates
+      cctvReports.forEach(cctv => {
+        // Accept different possible property names from DTO
+        const lat = cctv.cctvLatitude ?? cctv.latitude ?? cctv.lat;
+        const lng = cctv.cctvLongitude ?? cctv.longitude ?? cctv.lng ?? cctv.long;
+        if (lat && lng) {
+          coordinates.push([parseFloat(lat), parseFloat(lng)]);
         }
       });
       
@@ -92,6 +104,8 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
   const getMarkerColor = () => {
     return '#3b82f6'; // Blue color for all reports
   };
+
+  const getCctvMarkerColor = () => '#14b8a6'; // teal
 
   const formatLocation = (area) => {
     if (!area) return 'Unknown';
@@ -159,6 +173,12 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
                 </div>
                 <span>Report Location</span>
               </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-teal-500 flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">C</span>
+                  </div>
+                  <span>CCTV Detection</span>
+                </div>
             </div>
           </div>
 
@@ -230,6 +250,43 @@ const ReportMapModal = ({ isOpen, onClose, missingDocument, reports }) => {
                         )}
                         {(report.latitude && report.longitude) && (
                           <p><strong>Coordinates:</strong> {report.latitude}, {report.longitude}</p>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
+              {/* CCTV Markers */}
+              {cctvReports && cctvReports.length > 0 && cctvReports.map((cctv, idx) => {
+                const lat = cctv.cctvLatitude ?? cctv.latitude ?? cctv.lat;
+                const lng = cctv.cctvLongitude ?? cctv.longitude ?? cctv.lng ?? cctv.long;
+
+                if (!lat || !lng) return null;
+
+                const latNum = parseFloat(lat);
+                const lngNum = parseFloat(lng);
+
+                const imgSrc = cctv.detectPicture
+                  ? (String(cctv.detectPicture).startsWith('http') ? cctv.detectPicture : `${API_BASE}${cctv.detectPicture}`)
+                  : null;
+
+                return (
+                  <Marker
+                    key={`cctv-${cctv.id ?? idx}`}
+                    position={[latNum, lngNum]}
+                    icon={createCustomIcon(getCctvMarkerColor(), 'C')}
+                  >
+                    <Popup>
+                      <div className="p-2 max-w-xs">
+                        <h3 className="font-semibold text-teal-600 mb-2">CCTV Detection</h3>
+                        <p><strong>Camera:</strong> {cctv.cctvName || `Camera ${cctv.cctvId ?? 'N/A'}`}</p>
+                        <p><strong>Time:</strong> {cctv.timeReport ? new Date(cctv.timeReport).toLocaleString('vi-VN') : 'N/A'}</p>
+                        <p><strong>Confidence:</strong> {cctv.confident ?? cctv.confidence ?? 'N/A'}</p>
+                        {imgSrc && (
+                          <div className="mt-2">
+                            <img src={imgSrc} alt="detection" className="w-full h-40 object-cover rounded" />
+                          </div>
                         )}
                       </div>
                     </Popup>

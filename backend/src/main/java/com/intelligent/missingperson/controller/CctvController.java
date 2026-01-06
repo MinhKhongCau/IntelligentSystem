@@ -10,7 +10,6 @@ import com.intelligent.missingperson.repository.CctvReportRepository;
 import com.intelligent.missingperson.repository.MissingDocumentRepository;
 import com.intelligent.missingperson.service.AreaService;
 import com.intelligent.missingperson.service.CctvService;
-import com.intelligent.missingperson.service.PictureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +28,6 @@ public class CctvController {
     private final CctvReportRepository cctvReportRepository;
     private final MissingDocumentRepository missingDocumentRepository;
     private final AreaService areaService;
-    private final PictureService pictureService;
     private final com.intelligent.missingperson.service.DetectPictureService detectPictureService;
 
     @GetMapping
@@ -111,8 +109,18 @@ public class CctvController {
             if (req.getLongitude() != null) c.setLongitude(req.getLongitude());
 
             if (req.getLocationId() != null) {
-                Optional<Area> a = areaService.findById(req.getLocationId());
-                a.ifPresent(c::setArea);
+                // Treat locationId as an Area id. If client sends <= 0, clear the area.
+                if (req.getLocationId() <= 0) {
+                    c.setArea(null);
+                } else {
+                    Optional<Area> a = areaService.findById(req.getLocationId());
+                    if (a.isEmpty()) {
+                        return ResponseEntity.badRequest().body("Area not found: " + req.getLocationId());
+                    }
+                    if (req.getLatitude() == null) c.setLatitude(a.get().getLatitude());
+                    if (req.getLongitude() == null) c.setLongitude(a.get().getLongitude());
+                    c.setArea(a.get());
+                }
             }
 
             Cctv saved = cctvRepository.save(c);
@@ -197,6 +205,8 @@ public class CctvController {
                     .detectionLog(saved.getDetectionLog())
                     .detectPicture(saved.getDetectPicture())
                     .confirmationStatus(saved.getConfirmationStatus())
+                    .cctvLatitude(saved.getCctv() != null ? saved.getCctv().getLatitude() : null)
+                    .cctvLongitude(saved.getCctv() != null ? saved.getCctv().getLongitude() : null)
                     .build();
 
             return ResponseEntity.status(201).body(out);
@@ -209,6 +219,7 @@ public class CctvController {
     public ResponseEntity<?> getReportsForMissing(@PathVariable Integer missingId) {
         try {
             List<com.intelligent.missingperson.entity.CctvReport> list = cctvReportRepository.findByMissingDocumentId(missingId);
+            
             List<CctvReportDTO> dtoList = list.stream().map(r -> CctvReportDTO.builder()
                     .id(r.getId())
                     .cctvId(r.getCctv() != null ? r.getCctv().getId() : null)
@@ -220,6 +231,8 @@ public class CctvController {
                     .detectionLog(r.getDetectionLog())
                     .detectPicture(r.getDetectPicture())
                     .confirmationStatus(r.getConfirmationStatus())
+                    .cctvLatitude(r.getCctv() != null ? r.getCctv().getLatitude() : null)
+                    .cctvLongitude(r.getCctv() != null ? r.getCctv().getLongitude() : null)
                     .build()).toList();
 
             return ResponseEntity.ok(dtoList);

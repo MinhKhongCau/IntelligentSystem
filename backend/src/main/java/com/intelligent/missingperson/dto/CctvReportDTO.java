@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -29,4 +30,7 @@ public class CctvReportDTO {
     @JsonAlias({"detect_picture","image","detectPicture"})
     private String detectPicture;
     private String confirmationStatus;
+    // CCTV coordinates for map display
+    private BigDecimal cctvLatitude;
+    private BigDecimal cctvLongitude;
 }

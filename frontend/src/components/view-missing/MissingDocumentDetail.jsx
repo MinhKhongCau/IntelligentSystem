@@ -348,6 +348,7 @@ const MissingDocumentDetail = () => {
         onClose={() => setShowMapModal(false)}
         missingDocument={document}
         reports={reports}
+        cctvReports={cctvReports}
       />
     </div>
   );
