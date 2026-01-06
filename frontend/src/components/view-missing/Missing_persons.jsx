@@ -7,29 +7,33 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const Missing_persons = () => {
   const [cases, setCases] = useState([]);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const getdata = useCallback(async () => {
+  const getdata = useCallback(async (p = page) => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API_BASE}/api/missing-documents`);
-      const allCases = Array.isArray(res.data) ? res.data : [];
-      // Filter to show only cases with "Missing" status
-      const missingCases = allCases.filter(c => c.caseStatus === 'Missing');
+      const res = await axios.get(`${API_BASE}/api/missing-documents`, { params: { page: p, size } });
+      const data = res.data;
+      const list = Array.isArray(data) ? data : (data.content || []);
+      const missingCases = list.filter(c => c.caseStatus === 'Missing');
       setCases(missingCases);
+      if (data && data.totalPages !== undefined) setTotalPages(data.totalPages);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError('Failed to load cases. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, size]);
 
   useEffect(() => {
-    getdata();
-  }, [getdata]);
+    getdata(page);
+  }, [page]);
 
   const handleDeleted = (id) => {
     setCases((prev) => prev.filter((c) => c.id !== id));
@@ -79,6 +83,19 @@ const Missing_persons = () => {
               />
             );
           })}
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button
+            onClick={() => { if (page > 0) setPage(p => p - 1); }}
+            disabled={page <= 0}
+            className={`px-4 py-2 rounded ${page <= 0 ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Prev</button>
+          <div className="text-sm text-gray-700">Page {page + 1} {totalPages ? `of ${totalPages}` : ''}</div>
+          <button
+            onClick={() => { if (totalPages === 0 || page + 1 < totalPages) setPage(p => p + 1); }}
+            disabled={totalPages > 0 && page + 1 >= totalPages}
+            className={`px-4 py-2 rounded ${totalPages > 0 && page + 1 >= totalPages ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Next</button>
         </div>
       </div>
     </div>

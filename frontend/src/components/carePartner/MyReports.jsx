@@ -9,26 +9,35 @@ const MyReports = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [myReports, setMyReports] = useState([]);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchMyReports();
-  }, []);
+    fetchMyReports(page);
+  }, [page]);
 
-  const fetchMyReports = async () => {
+  const fetchMyReports = async (p = page) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
-      // Fetch all missing documents
-      const response = await axios.get(`${API_BASE}/api/missing-documents`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      if (!user || !user.id) {
+        setMyReports([]);
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE}/api/missing-documents/reports/volunteer/${user.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        params: { page: p, size }
       });
 
-      // Filter documents created by current user
-      const userReports = response.data.filter(doc => doc.reporterId === user?.id);
-      setMyReports(userReports);
+      const data = response.data;
+      const list = Array.isArray(data) ? data : (data.content || []);
+      setMyReports(list);
+      if (data && data.totalPages !== undefined) setTotalPages(data.totalPages);
     } catch (err) {
       console.error('Error fetching my reports:', err);
       setError('Failed to load your reports');
@@ -122,59 +131,55 @@ const MyReports = () => {
             {myReports.map((report) => (
               <div key={report.id} className="bg-white rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {report.name}
-                  </h3>
-                  <span className={getStatusBadgeClass(report.caseStatus)}>
-                    {report.caseStatus || 'Unknown'}
-                  </span>
+                  <h3 className="text-lg font-semibold text-gray-800">Report for ID: {report.missingDocumentId}</h3>
+                  <span className={getStatusBadgeClass(report.reportStatus)}>{report.reportStatus || 'Unknown'}</span>
                 </div>
 
-                {report.facePictureUrl && (
+                {report.sightingPicture && (
                   <div className="w-full rounded-lg overflow-hidden mb-4">
                     <img
-                      src={`${API_BASE}${report.facePictureUrl}`}
-                      alt={report.name}
+                      src={report.sightingPicture.startsWith('http') ? report.sightingPicture : `${API_BASE}${report.sightingPicture}`}
+                      alt={`report-${report.id}`}
                       className="w-full h-48 object-cover"
                     />
                   </div>
                 )}
 
                 <div className="space-y-2 mb-4">
-                  <div className="text-sm text-gray-600">
-                    <strong>Gender:</strong> {report.gender ? 'Female' : 'Male'}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <strong>Missing Since:</strong> {formatDateTime(report.missingTime)}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <strong>Reported:</strong> {formatDateTime(report.reportDate)}
-                  </div>
-                  {report.missingArea && (
-                    <div className="text-sm text-gray-600">
-                      <strong>Location:</strong> {report.missingArea.province}, {report.missingArea.country}
-                    </div>
+                  <div className="text-sm text-gray-600"><strong>Reported At:</strong> {formatDateTime(report.reportTime)}</div>
+                  <div className="text-sm text-gray-600"><strong>Description:</strong> {report.description}</div>
+                  {report.sightingArea && (
+                    <div className="text-sm text-gray-600"><strong>Area:</strong> {report.sightingArea.province}, {report.sightingArea.country}</div>
                   )}
                 </div>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => navigate(`/missing-document/${report.id}`)}
+                    onClick={() => navigate(`/missing-document/${report.missingDocumentId}`)}
                     className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
-                  >
-                    View Detail
-                  </button>
+                  >View Missing Document</button>
                   <button
                     onClick={() => handleEditReport(report.id)}
                     className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                  >
-                    Edit Report
-                  </button>
+                  >Edit Report</button>
                 </div>
               </div>
             ))}
           </div>
         )}
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button
+            onClick={() => { if (page > 0) setPage(p => p - 1); }}
+            disabled={page <= 0}
+            className={`px-4 py-2 rounded ${page <= 0 ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Prev</button>
+          <div className="text-sm text-gray-700">Page {page + 1} {totalPages ? `of ${totalPages}` : ''}</div>
+          <button
+            onClick={() => { if (totalPages === 0 || page + 1 < totalPages) setPage(p => p + 1); }}
+            disabled={totalPages > 0 && page + 1 >= totalPages}
+            className={`px-4 py-2 rounded ${totalPages > 0 && page + 1 >= totalPages ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Next</button>
+        </div>
       </div>
     </div>
   );

@@ -35,8 +35,8 @@ import MyReportEdit from './components/carePartner/MyReportEdit';
 import MyFoundCases from './components/volunteer/MyFoundCases';
 import EditFoundCase from './components/volunteer/EditFoundCase';
 import ManageCamera from './components/manage-camera/ManageCameras';
-import AllVolunteers from './components/volunteers/AllVolunteers';
-import VolunteerDetail from './components/volunteers/VolunteerDetail';
+import AllVolunteers from './components/volunteer/AllVolunteers';
+import VolunteerDetail from './components/volunteer/VolunteerDetail';
 function App() {
   return (
     <AuthProvider>

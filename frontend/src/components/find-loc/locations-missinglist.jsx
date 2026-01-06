@@ -55,11 +55,11 @@ const LocationsMissingList = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${API_BASE}/api/missing-documents`, {
+        const res = await axios.get(`${API_BASE}/api/missing-documents/all`, {
           params: searchTerm ? { name: searchTerm } : {}
         });
 
-        setItems(Array.isArray(res.data) ? res.data : []);
+        setItems(Array.isArray(res.data) ? res.data : (res.data.content || []));
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');

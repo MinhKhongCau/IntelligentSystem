@@ -7,28 +7,34 @@ const VIDEO_STREAM_URL = 'http://localhost:5001';
 
 const ManageCameras = () => {
   const [cameras, setCameras] = useState([]);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingCamera, setEditingCamera] = useState(null);
 
-  const fetchCameras = useCallback(async () => {
+  const fetchCameras = useCallback(async (p = page) => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API_BASE}/api/cctv`);
-      setCameras(Array.isArray(res.data) ? res.data : []);
+      const res = await axios.get(`${API_BASE}/api/cctv`, { params: { page: p, size } });
+      const data = res.data;
+      const content = Array.isArray(data) ? data : (data.content || []);
+      setCameras(content);
+      if (data && data.totalPages !== undefined) setTotalPages(data.totalPages);
     } catch (err) {
       console.error('Error fetching cameras:', err);
       setError('Failed to load cameras.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, size]);
 
   useEffect(() => {
-    fetchCameras();
-  }, [fetchCameras]);
+    fetchCameras(page);
+  }, [fetchCameras, page]);
 
   const handleAdd = () => {
     setEditingCamera(null);
@@ -122,6 +128,20 @@ const ManageCameras = () => {
             </div>
           </div>
         )}
+        
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button
+            onClick={() => { if (page > 0) setPage(p => p - 1); }}
+            disabled={page <= 0}
+            className={`px-4 py-2 rounded ${page <= 0 ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Prev</button>
+          <div className="text-sm text-gray-700">Page {page + 1} {totalPages ? `of ${totalPages}` : ''}</div>
+          <button
+            onClick={() => { if (totalPages === 0 || page + 1 < totalPages) setPage(p => p + 1); }}
+            disabled={totalPages > 0 && page + 1 >= totalPages}
+            className={`px-4 py-2 rounded ${totalPages > 0 && page + 1 >= totalPages ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Next</button>
+        </div>
       </div>
     </div>
   );
