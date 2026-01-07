@@ -19,4 +19,10 @@ public interface VolunteerReportRepository extends JpaRepository<VolunteerReport
 
     @Query("SELECT vr FROM VolunteerReport vr WHERE vr.volunteer.id = :volunteerId ORDER BY vr.reportTime DESC")
     Page<VolunteerReport> findByVolunteerId(@Param("volunteerId") Integer volunteerId, Pageable pageable);
+
+    @Query("SELECT vr FROM VolunteerReport vr WHERE vr.volunteer.id = :volunteerId AND vr.reportStatus = :status ORDER BY vr.reportTime DESC")
+    Page<VolunteerReport> findByVolunteerIdAndReportStatus(@Param("volunteerId") Integer volunteerId, @Param("status") String status, Pageable pageable);
+
+    @Query("SELECT vr FROM VolunteerReport vr WHERE vr.volunteer.id = :volunteerId AND LOWER(vr.missingDocument.fullName) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY vr.reportTime DESC")
+    Page<VolunteerReport> findByVolunteerIdAndMissingDocumentFullNameContaining(@Param("volunteerId") Integer volunteerId, @Param("name") String name, Pageable pageable);
 }

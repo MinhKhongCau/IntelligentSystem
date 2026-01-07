@@ -9,7 +9,7 @@ import LocationsMissingList from "./components/find-loc/locations-missinglist";
 // import SearchButton from './components/find_loc/SearchButton';
 import Formmissing from './components/missing-form/Formmissing';
 import Navbar from './components/auth/Navbar';
-import Missing_persons from './components/view-missing/Missing_persons';
+import MissingPersonsPage from './components/view-missing/MissingPersonsPage';
 import Hero from './components/Hero/Hero';
 import Login from './components/auth/Login';
 import Logout from './components/auth/Logout';
@@ -70,7 +70,7 @@ function App() {
             } />
             <Route path="/missingpeople" element={
               <ProtectedRoute>
-                <Missing_persons/>
+                <MissingPersonsPage/>
               </ProtectedRoute>
             } />
             <Route path="/missinglocations" element={

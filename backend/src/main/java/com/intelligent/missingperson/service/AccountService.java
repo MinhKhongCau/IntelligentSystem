@@ -49,7 +49,9 @@ public class AccountService {
         if (search == null || search.isBlank()) {
             return accountRepository.findAll(pageable);
         }
-        return accountRepository.findByFullNameContainingIgnoreCaseOrUsernameContainingIgnoreCase(search, search, pageable);
+        // search across full name, username, email and phone
+        return accountRepository.findByFullNameContainingIgnoreCaseOrUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrPhoneContainingIgnoreCase(
+                search, search, search, search, pageable);
     }
 
     public List<Account> findAll() {

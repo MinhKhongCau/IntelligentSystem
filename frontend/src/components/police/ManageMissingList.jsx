@@ -21,7 +21,8 @@ const ManageMissingList = () => {
         },
         params: searchTerm ? { name: searchTerm } : {}
       });
-      setDocuments(response.data);
+      const data = response.data;
+      setDocuments(Array.isArray(data) ? data : (data.content || []));
     } catch (error) {
       console.error('Error fetching missing documents:', error);
       showNotification('Error fetching documents', 'error');

@@ -19,9 +19,17 @@ public class VolunteerController {
     private final VolunteerService volunteerService;
 
     @GetMapping
-    public ResponseEntity<List<VolunteerDTO>> getAll() {
-        List<Volunteer> list = volunteerService.findAll();
-        List<VolunteerDTO> dtos = list.stream().map(this::toDTO).collect(Collectors.toList());
+    public ResponseEntity<?> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search
+    ) {
+        // use pageable search from service
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Volunteer> pageResult = volunteerService.findAll(pageable, search);
+
+        List<VolunteerDTO> dtos = pageResult.getContent().stream().map(this::toDTO).collect(Collectors.toList());
+
         return ResponseEntity.ok(dtos);
     }
 

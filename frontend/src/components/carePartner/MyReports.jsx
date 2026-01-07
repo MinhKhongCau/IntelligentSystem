@@ -14,12 +14,25 @@ const MyReports = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    // Fetch when page changes
     fetchMyReports(page);
   }, [page]);
 
-  const fetchMyReports = async (p = page) => {
+  // Debounce search input and trigger a fresh fetch
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      // Reset to first page and fetch results for search term
+      setPage(0);
+      fetchMyReports(0, searchTerm);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const fetchMyReports = async (p = page, s = searchTerm) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -31,7 +44,7 @@ const MyReports = () => {
 
       const response = await axios.get(`${API_BASE}/api/missing-documents/reports/volunteer/${user.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
-        params: { page: p, size }
+        params: { page: p, size, search: s }
       });
 
       const data = response.data;
@@ -107,13 +120,22 @@ const MyReports = () => {
             </button>
             <h1 className="text-3xl font-bold text-gray-800">My Reports</h1>
           </div>
-          <button
-            onClick={() => navigate('/formmissing')}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
-          >
-            <span>+</span>
-            Create New Report
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search reports by person, area, or description"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-72"
+            />
+            <button
+              onClick={() => navigate('/formmissing')}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
+            >
+              <span>+</span>
+              Create New Report
+            </button>
+          </div>
         </div>
 
         {myReports.length === 0 ? (

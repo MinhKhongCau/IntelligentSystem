@@ -12,12 +12,15 @@ const Missing_persons = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getdata = useCallback(async (p = page) => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API_BASE}/api/missing-documents`, { params: { page: p, size } });
+      const params = { page: p, size };
+      if (searchTerm && searchTerm.trim().length > 0) params.name = searchTerm.trim();
+      const res = await axios.get(`${API_BASE}/api/missing-documents/search`, { params });
       const data = res.data;
       const list = Array.isArray(data) ? data : (data.content || []);
       const missingCases = list.filter(c => c.caseStatus === 'Missing');
@@ -29,11 +32,12 @@ const Missing_persons = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size]);
+  }, [page, size, searchTerm]);
 
   useEffect(() => {
-    getdata(page);
-  }, [page]);
+    const t = setTimeout(() => getdata(page), 300);
+    return () => clearTimeout(t);
+  }, [page, searchTerm]);
 
   const handleDeleted = (id) => {
     setCases((prev) => prev.filter((c) => c.id !== id));
@@ -52,6 +56,15 @@ const Missing_persons = () => {
       {error && <div className="text-center p-8 text-red-600 font-medium">{error}</div>}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="flex justify-end mb-6">
+          <input
+            type="search"
+            placeholder="Search name..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+            className="ml-4 p-2 border border-gray-300 items-end rounded w-64 gap-6"
+            />
+        </div>
         <div className="gap-6 px-4 md:px-0">
           {cases.map((element) => {
             const imageUrl = element.facePictureUrl?.startsWith('http') 

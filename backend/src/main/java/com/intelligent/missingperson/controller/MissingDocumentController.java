@@ -62,6 +62,24 @@ public class MissingDocumentController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchMissingDocuments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer areaId,
+            @RequestParam(required = false) Integer reporterId
+    ) {
+        try {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
+            org.springframework.data.domain.Page<com.intelligent.missingperson.dto.MissingDocumentResponseDTO> paged = missingDocumentService.searchPaged(pageable, name, status, areaId, reporterId);
+            return ResponseEntity.ok(paged);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error searching documents: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/all")
     public ResponseEntity<?> getAllMissingDocumentsNoPage(@RequestParam(required = false) String name) {
         try {
@@ -356,7 +374,9 @@ public class MissingDocumentController {
     public ResponseEntity<?> getReportsByVolunteerId(
             @PathVariable Integer volunteerId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status
     ) {
         try {
             Optional<Volunteer> volunteerOpt = volunteerService.findById(volunteerId);
@@ -364,7 +384,7 @@ public class MissingDocumentController {
                 return ResponseEntity.badRequest().body("Volunteer not found with id: " + volunteerId);
             }
             org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page), Math.max(1, size));
-            org.springframework.data.domain.Page<com.intelligent.missingperson.dto.VolunteerReportDTO> paged = missingDocumentService.getReportsByVolunteerIdPaged(volunteerId, pageable);
+            org.springframework.data.domain.Page<com.intelligent.missingperson.dto.VolunteerReportDTO> paged = missingDocumentService.getReportsByVolunteerIdPaged(volunteerId, search, status, pageable);
             return ResponseEntity.ok(paged);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error retrieving volunteer reports: " + e.getMessage());

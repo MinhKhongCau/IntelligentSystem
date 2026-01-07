@@ -39,7 +39,10 @@ const CCTVMonitor = () => {
       try {
         setLoadingMissingPersons(true);
         const response = await axios.get(`${API_BASE}/api/missing-documents`);
-        setMissingPersons(response.data);
+        // Support both legacy array responses and new paged responses
+        const data = response.data;
+        const list = Array.isArray(data) ? data : (data?.content || []);
+        setMissingPersons(list);
       } catch (error) {
         console.error('Failed to fetch missing persons:', error);
         showNotification('Failed to load missing persons list', 'error');
@@ -411,6 +414,12 @@ const CCTVMonitor = () => {
         )}
 
         {/* Header */}
+        <button
+          onClick={() => navigate(-1)}
+          className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors mb-4"
+          >
+          ← Back
+        </button>
         <div className="bg-white rounded-xl shadow-2xl p-8 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -595,7 +604,17 @@ const CCTVMonitor = () => {
                 <div className="bg-white rounded-lg p-4">
                   <h4 className="font-semibold text-gray-800 mb-3">Detection Details:</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {searchResults.detections.map((detection, index) => (
+                    {searchResults.detections.map((detection, index) => {
+                      // Defensive guards for possibly-missing detection fields
+                      const tsText = (typeof detection?.timestamp === 'number') ? `${detection.timestamp.toFixed(2)}s` : '—';
+                      const bbox = detection?.bbox || {};
+                      const posX = (bbox.x !== undefined && bbox.x !== null) ? bbox.x : '—';
+                      const posY = (bbox.y !== undefined && bbox.y !== null) ? bbox.y : '—';
+                      const sizeW = (bbox.width !== undefined && bbox.width !== null) ? bbox.width : '—';
+                      const sizeH = (bbox.height !== undefined && bbox.height !== null) ? bbox.height : '—';
+                      const distanceText = (typeof detection?.distance === 'number') ? detection.distance.toFixed(4) : '—';
+
+                      return (
                       <div 
                         key={index} 
                         className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -631,27 +650,27 @@ const CCTVMonitor = () => {
                         
                         {/* Detection Info */}
                         <div className="p-3">
-                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-gray-700">
                               Frame {detection.frame_number}
                             </span>
                             <span className="text-xs text-gray-500">
-                              @ {detection.timestamp.toFixed(2)}s
+                              @ {tsText}
                             </span>
                           </div>
                           
                           <div className="space-y-1 text-xs text-gray-600">
                             <div className="flex justify-between">
                               <span>Position:</span>
-                              <span className="font-mono">({detection.bbox.x}, {detection.bbox.y})</span>
+                              <span className="font-mono">({posX}, {posY})</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Size:</span>
-                              <span className="font-mono">{detection.bbox.width}x{detection.bbox.height}</span>
+                              <span className="font-mono">{sizeW}x{sizeH}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Distance:</span>
-                              <span className="font-mono">{detection.distance.toFixed(4)}</span>
+                              <span className="font-mono">{distanceText}</span>
                             </div>
                           </div>
                           
@@ -661,7 +680,8 @@ const CCTVMonitor = () => {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

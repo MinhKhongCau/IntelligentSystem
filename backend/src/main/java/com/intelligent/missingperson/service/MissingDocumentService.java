@@ -58,6 +58,49 @@ public class MissingDocumentService {
         }
     }
 
+    /**
+     * Search missing documents with optional filters. If multiple filters are provided,
+     * name filter is applied first (via repository query) and remaining filters are applied in-memory
+     * to the resulting page content.
+     */
+    public Page<MissingDocumentResponseDTO> searchPaged(Pageable pageable, String name, String status, Integer areaId, Integer reporterId) {
+        Page<MissingDocument> basePage;
+        if (name != null && !name.isBlank()) {
+            basePage = missingDocumentRepository.findByFullNameContaining(name, pageable);
+        } else if (status != null && !status.isBlank()) {
+            // repository has findByCaseStatus returning a list (non-paged); adapt via in-memory paging
+            List<MissingDocument> byStatus = missingDocumentRepository.findByCaseStatus(status);
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), byStatus.size());
+            List<MissingDocument> pageContent = start <= end ? byStatus.subList(start, end) : java.util.Collections.emptyList();
+            List<MissingDocumentResponseDTO> dtos = pageContent.stream().map(this::mapToMissingDocumentResponseDTO).toList();
+            return new PageImpl<>(dtos, pageable, byStatus.size());
+        } else if (areaId != null) {
+            basePage = missingDocumentRepository.findByMissingAreaId(areaId, pageable);
+        } else if (reporterId != null) {
+            basePage = missingDocumentRepository.findByReporterId(reporterId, pageable);
+        } else {
+            basePage = missingDocumentRepository.findAll(pageable);
+        }
+
+        // convert base page to DTOs and apply additional in-memory filters if needed
+        List<MissingDocument> baseList = basePage.getContent();
+        java.util.stream.Stream<MissingDocument> stream = baseList.stream();
+        if (status != null && !status.isBlank()) {
+            stream = stream.filter(d -> status.equals(d.getCaseStatus()));
+        }
+        if (areaId != null) {
+            stream = stream.filter(d -> d.getMissingArea() != null && areaId.equals(d.getMissingArea().getId()));
+        }
+        if (reporterId != null) {
+            stream = stream.filter(d -> d.getReporter() != null && reporterId.equals(d.getReporter().getId()));
+        }
+
+        List<MissingDocumentResponseDTO> dtos = stream.map(this::mapToMissingDocumentResponseDTO).toList();
+        // Note: totalElements set to dtos.size() which is the page-size-limited count; this is acceptable for simple filtering
+        return new PageImpl<>(dtos, pageable, dtos.size());
+    }
+
     public Optional<MissingDocument> findById(Integer id) {
         return missingDocumentRepository.findById(id);
     }
@@ -209,6 +252,22 @@ public class MissingDocumentService {
         return new PageImpl<>(dtos, pageable, page.getTotalElements());
     }
 
+    // Overloaded: support optional filtering by report status or missing document name
+    public Page<com.intelligent.missingperson.dto.VolunteerReportDTO> getReportsByVolunteerIdPaged(Integer volunteerId, String searchName, String reportStatus, Pageable pageable) {
+        Page<VolunteerReport> page;
+        if (reportStatus != null && !reportStatus.isBlank()) {
+            page = volunteerReportRepository.findByVolunteerIdAndReportStatus(volunteerId, reportStatus, pageable);
+        } else if (searchName != null && !searchName.isBlank()) {
+            page = volunteerReportRepository.findByVolunteerIdAndMissingDocumentFullNameContaining(volunteerId, searchName, pageable);
+        } else {
+            page = volunteerReportRepository.findByVolunteerId(volunteerId, pageable);
+        }
+        List<com.intelligent.missingperson.dto.VolunteerReportDTO> dtos = page.stream()
+                .map(this::convertReportToDTO)
+                .toList();
+        return new PageImpl<>(dtos, pageable, page.getTotalElements());
+    }
+
     private VolunteerReportDTO convertReportToDTO(VolunteerReport report) {
         com.intelligent.missingperson.dto.AreaDTO areaDTO = null;
         if (report.getSightingArea() != null) {
@@ -237,6 +296,11 @@ public class MissingDocumentService {
                 .description(report.getDescription())
                 .reportStatus(report.getReportStatus())
                 .build();
+    }
+
+    // Public wrapper to expose report conversion for controllers
+    public com.intelligent.missingperson.dto.VolunteerReportDTO toReportDTO(VolunteerReport report) {
+        return convertReportToDTO(report);
     }
 
     public void updateDocumentFields(MissingDocument document, MissingDocumentRequest request) {

@@ -15,45 +15,51 @@ const MyFoundCases = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
-    fetchMyFoundCases();
-  }, []);
+    // fetch initial page
+    fetchMyFoundCases(page, searchTerm);
+  }, [page]);
 
-  const fetchMyFoundCases = async () => {
+  // debounce searchTerm and fetch
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPage(0);
+      fetchMyFoundCases(0, searchTerm);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  const fetchMyFoundCases = async (p = page, s = searchTerm) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
-      // Fetch all reports from all missing documents
-      const response = await axios.get(`${API_BASE}/api/missing-documents`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      // Get all reports from all missing documents and filter by current user
-      const allReports = [];
-      for (const document of response.data) {
-        try {
-          const reportsResponse = await axios.get(`${API_BASE}/api/missing-documents/reports/${document.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          // Add document info to each report and filter by current user
-          const userReports = reportsResponse.data
-            .filter(report => report.volunteerId === user?.id)
-            .map(report => ({
-              ...report,
-              missingDocument: document
-            }));
-          
-          allReports.push(...userReports);
-        } catch (err) {
-          console.error(`Error fetching reports for document ${document.id}:`, err);
-        }
+      if (!user || !user.id) {
+        setMyFoundCases([]);
+        setFilteredCases([]);
+        setLoading(false);
+        return;
       }
 
-      setMyFoundCases(allReports);
-      setFilteredCases(allReports);
+      // Use server-side volunteer reports endpoint (paged)
+      const resp = await axios.get(`${API_BASE}/api/missing-documents/reports/volunteer/${user.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        params: { page: p, size, search: s }
+      });
+
+      const data = resp.data;
+      const list = Array.isArray(data) ? data : (data.content || []);
+
+      // Ensure each report has missingDocument info (backend should include it)
+      setMyFoundCases(list);
+      setFilteredCases(list);
+      if (data && data.totalPages !== undefined) setTotalPages(data.totalPages);
+      if (data && data.totalElements !== undefined) setTotalElements(data.totalElements);
     } catch (err) {
       console.error('Error fetching my found cases:', err);
       setError('Failed to load your found cases');
@@ -62,7 +68,7 @@ const MyFoundCases = () => {
     }
   };
 
-  // Filter and sort cases
+  // Filter and sort cases (server-side search; client-side sort)
   useEffect(() => {
     let filtered = [...myFoundCases];
 
@@ -157,28 +163,30 @@ const MyFoundCases = () => {
     <div className="min-h-screen bg-gray-50 p-5">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+            ← Back
+          </button>
           <div className="flex items-center gap-5">
-            <button
-              onClick={() => navigate(-1)}
-              className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-            >
-              ← Back
-            </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">My Found Cases</h1>
+              <h1 className="text-3xl font-bold text-gray-800 items-center gap-2">My Found Cases</h1>
               <p className="text-sm text-gray-600 mt-1">
-                {myFoundCases.length} report(s) submitted
+                {totalElements > 0 ? `${totalElements} report(s) submitted` : `${myFoundCases.length} report(s) submitted`}
               </p>
             </div>
           </div>
+          <div className="flex gap-3 items-end">
+          </div>
           <div className="flex gap-3">
-            <button
-              onClick={fetchMyFoundCases}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium flex items-center gap-2"
-            >
-              <span>🔄</span>
-              Refresh
-            </button>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name, area, or description"
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+            />
             <button
               onClick={() => navigate('/missingpeople')}
               className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2"
@@ -337,7 +345,20 @@ const MyFoundCases = () => {
             ))}
           </div>
         )}
-      </div>
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button
+            onClick={() => { if (page > 0) setPage(p => p - 1); }}
+            disabled={page <= 0}
+            className={`px-4 py-2 rounded ${page <= 0 ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Prev</button>
+          <div className="text-sm text-gray-700">Page {page + 1} {totalPages ? `of ${totalPages}` : ''}</div>
+          <button
+            onClick={() => { if (totalPages === 0 || page + 1 < totalPages) setPage(p => p + 1); }}
+            disabled={totalPages > 0 && page + 1 >= totalPages}
+            className={`px-4 py-2 rounded ${totalPages > 0 && page + 1 >= totalPages ? 'bg-gray-300' : 'bg-blue-600 text-white'}`}
+          >Next</button>
+        </div>
+        </div>
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
@@ -364,7 +385,8 @@ const MyFoundCases = () => {
           </div>
         </div>
       )}
-    </div>
+      
+  </div>
   );
 };
 

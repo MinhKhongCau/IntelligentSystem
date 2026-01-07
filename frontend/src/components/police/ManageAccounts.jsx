@@ -29,15 +29,24 @@ const ManageAccounts = () => {
     fetchAccounts();
   }, []);
 
+  // trigger server search when searchTerm changes (debounced)
+  useEffect(() => {
+    const t = setTimeout(() => fetchAccounts(), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const fetchAccounts = async () => {
     try {
       const token = localStorage.getItem('token');
+      const params = {};
+      if (searchTerm && searchTerm.trim().length > 0) params.name = searchTerm.trim();
       const response = await axios.get(`${API_BASE}/api/accounts`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` },
+        params
       });
-      setAccounts(response.data);
+      const data = response.data;
+      // support paged response or plain array
+      setAccounts(Array.isArray(data) ? data : (data.content || []));
     } catch (error) {
       console.error('Error fetching accounts:', error);
       showNotification('Error fetching accounts', 'error');
@@ -164,11 +173,7 @@ const ManageAccounts = () => {
     });
   };
 
-  const filteredAccounts = accounts.filter(account =>
-    account.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAccounts = accounts; // server-side search now used
 
   return (
     <div className="p-5 bg-gray-50 min-h-screen">

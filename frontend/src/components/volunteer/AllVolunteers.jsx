@@ -6,28 +6,36 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const AllVolunteers = () => {
   const [volunteers, setVolunteers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        const resp = await axios.get(`${API_BASE}/api/volunteers`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setVolunteers(resp.data || []);
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load volunteers');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
+    const t = setTimeout(() => {
+      const fetch = async () => {
+        try {
+          setLoading(true);
+          const token = localStorage.getItem('token');
+          const params = {};
+          if (searchTerm && searchTerm.trim().length > 0) params.search = searchTerm.trim();
+          const resp = await axios.get(`${API_BASE}/api/volunteers`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params
+          });
+          const data = resp.data;
+          setVolunteers(Array.isArray(data) ? data : (data.content || []));
+        } catch (err) {
+          console.error(err);
+          setError('Failed to load volunteers');
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetch();
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   if (loading) return <div className="p-6">Loading volunteers...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
@@ -35,7 +43,22 @@ const AllVolunteers = () => {
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">Volunteers ({volunteers.length})</h1>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-5 py-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+          ← Back
+        </button>
+        <div className='flex items-center justify-between mb-8 gap-5'>
+            <h1 className="text-3xl font-bold text-gray-800">Volunteers ({volunteers.length})</h1>
+            <input
+              type="search"
+              placeholder="Search volunteers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="ml-4 p-2 border border-gray-300 rounded w-64"
+            />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {volunteers.map(v => (
             <div key={v.id} className="bg-white rounded-lg p-4 shadow hover:shadow-md">
