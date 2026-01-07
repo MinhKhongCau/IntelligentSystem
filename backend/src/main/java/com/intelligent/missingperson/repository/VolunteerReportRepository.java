@@ -25,4 +25,7 @@ public interface VolunteerReportRepository extends JpaRepository<VolunteerReport
 
     @Query("SELECT vr FROM VolunteerReport vr WHERE vr.volunteer.id = :volunteerId AND LOWER(vr.missingDocument.fullName) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY vr.reportTime DESC")
     Page<VolunteerReport> findByVolunteerIdAndMissingDocumentFullNameContaining(@Param("volunteerId") Integer volunteerId, @Param("name") String name, Pageable pageable);
+
+    @Query(value = "SELECT CAST(report_time AS DATE) as dt, COUNT(*) as cnt FROM VOLUNTEER_REPORT GROUP BY CAST(report_time AS DATE) ORDER BY dt", nativeQuery = true)
+    java.util.List<Object[]> countGroupedByReportDate();
 }

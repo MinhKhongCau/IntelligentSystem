@@ -2,6 +2,7 @@ package com.intelligent.missingperson.repository;
 
 import com.intelligent.missingperson.entity.MissingDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -22,5 +23,8 @@ public interface MissingDocumentRepository extends JpaRepository<MissingDocument
     Page<MissingDocument> findByReporterId(@Param("reporterId") Integer reporterId, Pageable pageable);
 
     List<MissingDocument> findByCaseStatus(@Param("caseStatus") String caseStatus);
+
+    @Query(value = "SELECT CAST(report_date AS DATE) as dt, COUNT(*) as cnt FROM MISSING_DOCUMENT GROUP BY CAST(report_date AS DATE) ORDER BY dt", nativeQuery = true)
+    java.util.List<Object[]> countGroupedByReportDate();
 
 }

@@ -22,6 +22,17 @@ const PoliceDashboard = () => {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
+            <h3 className="text-gray-800 text-2xl font-semibold mb-3">Statistics</h3>
+            <p className="text-gray-600 text-base leading-relaxed mb-5">View system statistics and reports</p>
+            <button 
+              onClick={() => navigate('/statistics')}
+              className="w-full py-3 px-5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg text-base font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all"
+            >
+              View Statistics
+            </button>
+          </div>
+
+          <div className="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all">
             <h3 className="text-gray-800 text-2xl font-semibold mb-3">Missing Persons</h3>
             <p className="text-gray-600 text-base leading-relaxed mb-5">Manage and view missing person reports</p>
             <button 

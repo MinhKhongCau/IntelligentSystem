@@ -37,6 +37,7 @@ import EditFoundCase from './components/volunteer/EditFoundCase';
 import ManageCamera from './components/manage-camera/ManageCameras';
 import AllVolunteers from './components/volunteer/AllVolunteers';
 import VolunteerDetail from './components/volunteer/VolunteerDetail';
+import Statistics from './components/police/Statistics';
 function App() {
   return (
     <AuthProvider>
@@ -171,6 +172,11 @@ function App() {
             <Route path="/volunteers/:id" element={
               <ProtectedRoute>
                 <VolunteerDetail/>
+              </ProtectedRoute>
+            } />
+            <Route path="/statistics" element={
+              <ProtectedRoute>
+                <Statistics/>
               </ProtectedRoute>
             } />
           </Routes>

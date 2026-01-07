@@ -32,7 +32,7 @@ const Login = () => {
       if (result || result.success) {
         const isPolice = result?.account?.roles?.includes('POLICE');
         if (isPolice) {
-          navigate('/police-dashboard');
+          navigate('/statistics');
           return;
         }
         navigate('/dashboard'); 
