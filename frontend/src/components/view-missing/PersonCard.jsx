@@ -44,11 +44,30 @@ const PersonCard = (props) => {
           }
         });
 
-        // Check if current document is in subscribed list
-        const subscribed = response.data.some(doc => doc.id === props.id);
-        setIsSubscribed(subscribed);
+        // response.data can be an array or an object with `content` array — normalize it
+        let items = response.data;
+        if (items && items.content && Array.isArray(items.content)) {
+          items = items.content;
+        }
+
+        const matchesId = (doc, targetId) => {
+          if (!doc) return false;
+          const candidates = [
+            doc.id,
+            doc.missing_document_id,
+            doc.missingDocumentId,
+            // some APIs nest the document
+            doc.missingDocument && doc.missingDocument.id,
+            doc.missingDocument && doc.missingDocument.missing_document_id,
+          ];
+          return candidates.some(c => c != null && String(c) === String(targetId));
+        };
+
+        const subscribed = Array.isArray(items) && items.some(doc => matchesId(doc, props.id));
+        setIsSubscribed(Boolean(subscribed));
       } catch (error) {
         console.error('Error checking subscription:', error);
+        setIsSubscribed(false);
       } finally {
         setCheckingSubscription(false);
       }

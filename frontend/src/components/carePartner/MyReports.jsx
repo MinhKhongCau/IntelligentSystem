@@ -41,10 +41,10 @@ const MyReports = () => {
         setLoading(false);
         return;
       }
-
-      const response = await axios.get(`${API_BASE}/api/missing-documents/reports/volunteer/${user.id}`, {
+      // Fetch missing documents that this user (care partner) reported/created
+      const response = await axios.get(`${API_BASE}/api/missing-documents/search`, {
         headers: { 'Authorization': `Bearer ${token}` },
-        params: { page: p, size, search: s }
+        params: { page: p, size, name: s, reporterId: user.id }
       });
 
       const data = response.data;
@@ -140,7 +140,7 @@ const MyReports = () => {
 
         {myReports.length === 0 ? (
           <div className="bg-white rounded-lg p-10 text-center text-gray-600">
-            <p className="text-lg mb-4">You haven't created any reports yet</p>
+            <p className="text-lg mb-4">You haven't created any missing-person reports yet</p>
             <button
               onClick={() => navigate('/formmissing')}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
@@ -150,38 +150,37 @@ const MyReports = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {myReports.map((report) => (
-              <div key={report.id} className="bg-white rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
+            {myReports.map((doc) => (
+              <div key={doc.id} className="bg-white rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Report for ID: {report.missingDocumentId}</h3>
-                  <span className={getStatusBadgeClass(report.reportStatus)}>{report.reportStatus || 'Unknown'}</span>
+                  <h3 className="text-lg font-semibold text-gray-800">{doc.name}</h3>
+                  <span className={getStatusBadgeClass(doc.caseStatus)}>{doc.caseStatus || 'Unknown'}</span>
                 </div>
 
-                {report.sightingPicture && (
+                {doc.facePictureUrl && (
                   <div className="w-full rounded-lg overflow-hidden mb-4">
                     <img
-                      src={report.sightingPicture.startsWith('http') ? report.sightingPicture : `${API_BASE}${report.sightingPicture}`}
-                      alt={`report-${report.id}`}
+                      src={doc.facePictureUrl.startsWith('http') ? doc.facePictureUrl : `${API_BASE}${doc.facePictureUrl}`}
+                      alt={`missing-${doc.id}`}
                       className="w-full h-48 object-cover"
                     />
                   </div>
                 )}
 
                 <div className="space-y-2 mb-4">
-                  <div className="text-sm text-gray-600"><strong>Reported At:</strong> {formatDateTime(report.reportTime)}</div>
-                  <div className="text-sm text-gray-600"><strong>Description:</strong> {report.description}</div>
-                  {report.sightingArea && (
-                    <div className="text-sm text-gray-600"><strong>Area:</strong> {report.sightingArea.province}, {report.sightingArea.country}</div>
+                  <div className="text-sm text-gray-600"><strong>Missing Since:</strong> {formatDateTime(doc.missingTime)}</div>
+                  {doc.missingArea && (
+                    <div className="text-sm text-gray-600"><strong>Area:</strong> {doc.missingArea.province}, {doc.missingArea.country}</div>
                   )}
                 </div>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => navigate(`/missing-document/${report.missingDocumentId}`)}
+                    onClick={() => navigate(`/missing-document/${doc.id}`)}
                     className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
                   >View Missing Document</button>
                   <button
-                    onClick={() => handleEditReport(report.id)}
+                    onClick={() => handleEditReport(doc.id)}
                     className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
                   >Edit Report</button>
                 </div>
