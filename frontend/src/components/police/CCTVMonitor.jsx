@@ -135,10 +135,10 @@ const CCTVMonitor = () => {
   };
 
   const handleSearchPerson = async () => {
-    if (!searchImage) {
-      showNotification('Please select an image', 'error');
-      return;
-    }
+    // if (!searchImage) {
+    //   showNotification('Please select an image', 'error');
+    //   return;
+    // }
     if (!searchCameraIp) {
       showNotification('Please select a camera', 'error');
       return;
@@ -149,7 +149,9 @@ const CCTVMonitor = () => {
 
     try {
       const formData = new FormData();
-      formData.append('image', searchImage);
+      if (searchImage) {
+        formData.append('image', searchImage);
+      }
       formData.append('camera_ip', searchCameraIp);
       formData.append('threshold', searchThreshold);
       // If a missing person was selected, include their name and id so the
@@ -540,7 +542,7 @@ const CCTVMonitor = () => {
               <div className="space-y-3">
                 <button
                   onClick={handleSearchPerson}
-                  disabled={isSearching || !searchImage || !searchCameraIp}
+                  disabled={isSearching || !searchCameraIp}
                   className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSearching ? (
@@ -632,7 +634,7 @@ const CCTVMonitor = () => {
                               #{index + 1}
                             </div>
                             <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs font-semibold">
-                              {detection.confidence}%
+                              {detection.confidence}% {detection.identity.person_name}
                             </div>
                             
                             {/* Hover overlay */}

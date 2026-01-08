@@ -3,10 +3,13 @@ package com.intelligent.missingperson.service;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Base64;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -83,6 +86,40 @@ public class PictureService {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public String convertImageToBase64String(String facePictureUrl) {
+        String imageBase64 = null;
+        String imagePath = facePictureUrl;
+        if (imagePath != null && !imagePath.isBlank()) {
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                byte[] imageBytes = null;
+                if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+                    // download remote image
+                    imageBytes = restTemplate.getForObject(imagePath, byte[].class);
+                } else {
+                    // try local file path (try as given first, then relative to working dir)
+                    try {
+                        imageBytes = Files.readAllBytes(Paths.get(imagePath));
+                    } catch (Exception ex) {
+                        try {
+                            imageBytes = Files.readAllBytes(Paths.get(System.getProperty("user.dir"), imagePath));
+                        } catch (Exception ex2) {
+                            imageBytes = null;
+                        }
+                    }
+                }
+
+                if (imageBytes != null) {
+                    imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
+                }
+            } catch (Exception ex) {
+                // ignore image conversion errors, continue
+                System.err.println("Warning: failed to read/encode image for Chroma: " + ex.getMessage());
+            }
+        }
+        return imageBase64;
     }
 }
 

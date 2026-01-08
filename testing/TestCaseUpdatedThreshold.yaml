@@ -1,0 +1,47 @@
+# Test cases for Face Recognition Adaptive Threshold Logic
+
+test_updated_threshold:
+  - name: "Hoàn toàn trùng khớp (Same identity)"
+    old_embedding: [1.0, 0.0, 0.0]
+    new_embedding: [1.0, 0.0, 0.0]
+    old_threshold: 0.5
+    expected_min: 0.85  # Vì similarity = 1.0, kẹp (clamp) trong [0.5, 0.85]
+    expected_max: 0.85
+
+  - name: "Hoàn toàn khác biệt (Different identity)"
+    old_embedding: [1.0, 0.0, 0.0]
+    new_embedding: [-1.0, 0.0, 0.0] # Ngược chiều hoàn toàn
+    old_threshold: 0.5
+    expected_min: 0.5
+    expected_max: 0.5
+
+  - name: "Cập nhật tăng dần (Similarity > Old Threshold)"
+    old_embedding: [1.0, 0.0, 0.0]
+    new_embedding: [0.8, 0.6, 0.0] # Cosine similarity ≈ 0.8
+    old_threshold: 0.6
+    # Similarity = (0.8 + 1)/2 = 0.9. Max(0.9, 0.6) = 0.9 -> Clamp -> 0.85
+    expected_min: 0.85
+    expected_max: 0.85
+
+  - name: "Giữ nguyên (Similarity < Old Threshold)"
+    old_embedding: [1.0, 0.0, 0.0]
+    new_embedding: [0.1, 0.9, 0.0] # Similarity thấp
+    old_threshold: 0.8
+    expected_min: 0.8
+    expected_max: 0.8
+
+test_adaptive_threshold:
+  - name: "Danh sách trống (First entry)"
+    old_data: []
+    new_embedding: [0.5, 0.5, 0.5]
+    expected_new_threshold: 0.5
+
+  - name: "Nhiều entry cũ (Multiple entries)"
+    old_data: 
+      - {oldEmbedding: [1, 0], oldThreshold: 0.5}
+      - {oldEmbedding: [0, 1], oldThreshold: 0.7}
+    new_embedding: [1, 0]
+    # Entry 1: sim=1.0 -> updated=0.85
+    # Entry 2: sim=0.5 -> updated=0.7
+    # Max(0.85, 0.7) = 0.85
+    expected_new_threshold: 0.85

@@ -195,6 +195,10 @@ const CCTVReportPage = () => {
                   <span className="text-sm text-gray-600">Face Distance:</span>
                   <span className="font-mono font-semibold text-green-700">{detection.distance.toFixed(4)}</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Threshold:</span>
+                  <span className="font-mono font-semibold text-green-700">{detection.threshold.toFixed(4)}</span>
+                </div>
                 <div className="text-xs text-gray-500 mt-2">
                   Lower distance = Better match
                 </div>

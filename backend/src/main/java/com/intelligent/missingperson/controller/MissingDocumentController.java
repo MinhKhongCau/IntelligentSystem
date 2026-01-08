@@ -23,6 +23,10 @@ import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/missing-documents")
@@ -132,7 +136,39 @@ public class MissingDocumentController {
             }
 
             MissingDocument savedDocument = missingDocumentService.save(request, areaOpt.get(), reporterOpt.get());
-            return ResponseEntity.ok("Document created successfully" + savedDocument);
+
+            // // Convert to DTO to send to Flask Chroma service
+            // try {
+            //     MissingDocumentResponseDTO dto = missingDocumentService.convertToDTO(savedDocument);
+
+            //     // Prepare image as base64
+            //     String imageBase64 = pictureService.convertImageToBase64String(savedDocument.getFacePictureUrl());
+
+            //     // Build payload and POST to Flask Chroma endpoint (non-blocking best-effort)
+            //     try {
+            //         String flaskUrl = System.getenv().getOrDefault("CHROMA_FLASK_URL", "http://video-streaming-service:5001/api/add-chroma");
+            //         RestTemplate rest = new RestTemplate();
+            //         HttpHeaders headers = new HttpHeaders();
+            //         headers.setContentType(MediaType.APPLICATION_JSON);
+            //         ObjectMapper mapper = new ObjectMapper();
+
+            //         java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            //         payload.put("missingDocumentDTO", dto);
+            //         payload.put("image", imageBase64);
+
+            //         String body = mapper.writeValueAsString(payload);
+            //         HttpEntity<String> entity = new HttpEntity<>(body, headers);
+
+            //         // fire-and-forget: we still call but do not fail the main request if this fails
+            //         rest.postForEntity(flaskUrl, entity, String.class);
+            //     } catch (Exception ex) {
+            //         System.err.println("Warning: failed to notify Flask Chroma service: " + ex.getMessage());
+            //     }
+            // } catch (Exception ex) {
+            //     System.err.println("Warning: failed to prepare/send data to Chroma: " + ex.getMessage());
+            // }
+
+            return ResponseEntity.status(201).body(savedDocument);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body("Error creating document: " + e.getMessage());
