@@ -57,9 +57,12 @@ active_streams = {}  # {camera_ip: connection_count}
 active_streams_lock = Lock()
 
 # Load model, database and detector (global resources)
+
+DB_PATH = 'chromadb_deploy'
+
 try:
     INFER = utils.load_model()
-    COLLECTION, CHROMA_CLIENT = utils.load_chroma_database(DB_PATH='chromadb_centroid')
+    COLLECTION, CHROMA_CLIENT = utils.load_chroma_database(DB_PATH=DB_PATH)
     DETECTOR = MTCNN()
     print("Tải mô hình và database thành công.")
 except Exception as e:
@@ -613,7 +616,11 @@ def search_person_in_video():
             result = utils.search_person_by_image_in_video(
                 uploaded_image=uploaded_image,
                 video_path=video_file,
-                threshold=threshold
+                threshold=threshold,
+                infer=INFER,
+                detector=DETECTOR,
+                collection=COLLECTION,
+                chroma_client=CHROMA_CLIENT
             )
             
             search_mode = 'image_matching'
@@ -625,7 +632,11 @@ def search_person_in_video():
             # Search all faces in video and identify them
             result = utils.search_all_faces_in_video(
                 video_path=video_file,
-                threshold=threshold
+                threshold=threshold,
+                infer=INFER,
+                detector=DETECTOR,
+                collection=COLLECTION,
+                chroma_client=CHROMA_CLIENT
             )
             
             search_mode = 'chromadb_search'
@@ -644,7 +655,7 @@ def search_person_in_video():
             detections = result.get('detections', []) or []
             for det in detections:
                 # Prefer explicit form-provided missing id / person name when available
-                missing_id = id_missing_document or det.get('missingDocumentId') or det.get('missing_document_id') or det.get('person_id') or det.get('personId')
+                missing_id = id_missing_document or det.get('missingDocumentId') or det.get('missing_document_id') or det.get('identity').get('person_id') or det.get('personId')
                 confident = det.get('confidence') or det.get('confident') or det.get('distance') or det.get('similarity')
                 detection_log = det.get('detection_log') or det.get('log') or ''
                 detect_picture = det.get('image') or det.get('detect_picture') or None
@@ -1138,6 +1149,13 @@ def add_person_to_chroma():
 # ============================================================================
 
 if __name__ == '__main__':
+    logging.info("="*80)
+    logging.info("STARTING APPLICATION")
+    logging.info("Loading configuration...")
+    logging.info(f"Load model {DB_PATH}: {'ON' if INFER else 'OFF'}")
+    logging.info(f"Load detector: {'ON' if DETECTOR else 'OFF'}")
+    logging.info(f"Load collection: {'ON' if COLLECTION else 'OFF'}")
+    logging.info("="*80)
     logging.info("="*80)
     logging.info("STARTING VIDEO STREAMING APPLICATION")
     logging.info("="*80)

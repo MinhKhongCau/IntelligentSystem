@@ -354,6 +354,40 @@ def add_person_to_chroma(person_id, face_image, metadata=None, infer=None, colle
         # Preprocess and generate embedding
         preprocessed_face = preprocess_img(face_cropped)
         embedding = image_to_embedding(preprocessed_face, infer)
+
+        if isinstance(embedding, np.ndarray) and embedding.ndim > 1:
+                embedding = embedding.flatten()
+
+        # Prepare threshold
+        existing_items = collection.get(include=['embeddings', 'metadatas'])
+        existing_ids = existing_items.get('ids', [])
+        existing_embs = existing_items.get('embeddings', [])
+        existing_metas = existing_items.get('metadatas', [])
+
+        old_list = []
+        for i in range(len(existing_embs)):
+            old_list.append({
+                'oldEmbedding': existing_embs[i],
+                'oldThreshold': existing_metas[i].get('threshold', 0.5)
+            })
+
+        # Caculate Threshold ---
+        if len(old_list) > 0:
+            # updated_vals is list new float for old record 
+            updated_vals, new_threshold = adaptiveThreshold(old_list, embedding)
+            
+            # update metadata for old ID
+            for i in range(len(existing_metas)):
+                existing_metas[i]['threshold'] = float(updated_vals[i])
+            
+            # Update metadata for old case
+            collection.update(
+                ids=existing_ids,
+                metadatas=existing_metas
+            )
+        else:
+            new_threshold = 0.5
+
         
         # Prepare metadata
         if metadata is None:
@@ -362,6 +396,7 @@ def add_person_to_chroma(person_id, face_image, metadata=None, infer=None, colle
         # Ensure person_id is in metadata as 'identity'
         metadata['identity'] = metadata.get('name', str(person_id))
         metadata['person_id'] = str(person_id)
+        metadata['threshold'] = float(new_threshold)
         
         # Prepare document
         document = f"Face identity: {metadata.get('name', person_id)}"
@@ -406,3 +441,76 @@ def cosine_similarity_numpy(v1, v2):
         return 0.0
         
     return np.dot(v1, v2) / (norm_v1 * norm_v2)
+
+
+def updatedThreshold(oldEmbedding, newEmbedding, oldThreshold):
+    """Compute an updated threshold for an existing embedding when a new embedding
+    (presumably from the same identity) is observed.
+
+    Steps:
+    - compute cosine similarity with `cosine_similarity_numpy`
+    - convert to [0,1] similarity via (cosine + 1) / 2
+    - threshold_candidate = similarity
+    - new_threshold = max(threshold_candidate, oldThreshold)
+    - clamp new_threshold to [0.5, 0.95]
+
+    Args:
+        oldEmbedding: array-like (existing embedding)
+        newEmbedding: array-like (incoming embedding)
+        oldThreshold: float (previous threshold for oldEmbedding)
+
+    Returns:
+        float: updated threshold in range [0.5, 0.95]
+    """
+    try:
+        v1 = np.asarray(oldEmbedding, dtype=float)
+        v2 = np.asarray(newEmbedding, dtype=float)
+    except Exception:
+        # if conversion fails, return oldThreshold clamped
+        return max(0.5, min(0.95, float(oldThreshold)))
+
+    cosine = cosine_similarity_numpy(v1, v2)
+    similarity = (cosine + 1.0) / 2.0
+    threshold_candidate = float(similarity)
+
+    # Take the maximum between new candidate and existing threshold
+    try:
+        base = float(oldThreshold)
+    except Exception:
+        base = 0.5
+
+    new_threshold = max(threshold_candidate, base)
+
+    # Clamp between lower and upper bounds
+    lower = 0.5
+    upper = 0.95
+    if new_threshold < lower:
+        new_threshold = lower
+    if new_threshold > upper:
+        new_threshold = upper
+
+    return new_threshold
+
+def adaptiveThreshold(oldEmbeddingAndThresholds, newEmbedding):
+    try:
+        updated_thresholds_list = []
+        new_embedding_array = np.array(newEmbedding)
+
+        for item in oldEmbeddingAndThresholds:
+            old_emb = np.array(item['oldEmbedding'])
+            old_threshold = item['oldThreshold']
+            
+            # Sửa từ updateThreshold thành updatedThreshold (cho khớp với hàm bạn định nghĩa ở trên)
+            new_val = updatedThreshold(old_emb, new_embedding_array, old_threshold)
+            
+            updated_thresholds_list.append(new_val)
+
+        if updated_thresholds_list:
+            new_threshold_for_new_emb = float(max(updated_thresholds_list))
+        else:
+            new_threshold_for_new_emb = 0.5 
+
+        return updated_thresholds_list, new_threshold_for_new_emb
+    except Exception as e:
+        print(f"Lỗi logic adaptive: {e}")
+        return [], 0.5

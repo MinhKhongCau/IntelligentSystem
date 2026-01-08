@@ -24,7 +24,8 @@ from utils.face_utils import (
     predict_identity_from_image,
     add_person_to_chromadb,
     add_person_to_chroma,
-    cosine_similarity_numpy
+    cosine_similarity_numpy,
+    adaptiveThreshold
 )
 
 # Import all Kafka streaming and video processing functions
@@ -59,6 +60,7 @@ __all__ = [
     'predict_identity_from_image',
     'add_person_to_chromadb',
     'add_person_to_chroma',
+    'adaptiveThreshold',
     # Kafka stream utils
     'process_video_stream',
     'process_video_file_for_face_recognition',

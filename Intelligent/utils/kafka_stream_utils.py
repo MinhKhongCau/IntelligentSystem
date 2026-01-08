@@ -234,15 +234,15 @@ def batch_process_videos_for_person(video_dir, target_person_id, threshold=0.6, 
     return all_results
 
 
-def search_all_faces_in_video(video_path, threshold=0.6):
+def search_all_faces_in_video(video_path, threshold=0.6, infer=None, detector=None, collection=None, chroma_client=None):
     """
     Search and identify all faces in video using ChromaDB
     Returns all detected faces with their identities from database
     """
-    collection, _ = load_chroma_database()
-    infer = load_model()
-    detector = MTCNN()
-    
+    collection, chroma_client = load_chroma_database() if collection is None else (collection, chroma_client)
+    infer = load_model() if infer is None else infer
+    detector = MTCNN() if detector is None else detector
+
     # Open video file
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -287,27 +287,28 @@ def search_all_faces_in_video(video_path, threshold=0.6):
             if results and results['distances'] and len(results['distances'][0]) > 0:
                 distance = results['distances'][0][0]
                 
+                # Extract identity information
+                person_id = None
+                person_name = None
+                threshold = 0.6
+                metadata = {}
+                
+                if results.get('metadatas') and len(results['metadatas'][0]) > 0:
+                    metadata = results['metadatas'][0][0]
+                    person_name = metadata.get('name') or metadata.get('person_name')
+                    threshold = metadata.get('threshold', threshold)
+                    person_id = metadata.get('id') or metadata.get('person_id')
+
                 # Check if match threshold
                 if distance > threshold:
-                    confidence = (1 + distance) / 2 * 100
-                    
-                    # Extract identity information
-                    person_id = None
-                    person_name = None
-                    metadata = {}
-                    
-                    if results.get('ids') and len(results['ids'][0]) > 0:
-                        person_id = results['ids'][0][0]
-                    
-                    if results.get('metadatas') and len(results['metadatas'][0]) > 0:
-                        metadata = results['metadatas'][0][0]
-                        person_name = metadata.get('person_name') or metadata.get('name')
+                    confidence = (distance) * 100
                     
                     detection = {
                         'frame_number': frame_number,
                         'timestamp': round(timestamp, 2),
                         'confidence': round(confidence, 2),
                         'distance': round(float(distance), 4),
+                        'threshold': round(threshold, 4),
                         'bbox': {
                             'x': int(x),
                             'y': int(y),
@@ -343,7 +344,7 @@ def search_all_faces_in_video(video_path, threshold=0.6):
     }
 
 
-def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
+def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6, infer=None, detector=None, collection=None, chroma_client=None):
     """
     Search for a person in video by comparing with uploaded image using direct cosine similarity
     Does NOT use ChromaDB - compares embeddings directly
@@ -358,9 +359,9 @@ def search_person_by_image_in_video(uploaded_image, video_path, threshold=0.6):
         Dictionary with detections, total_frames, fps, etc.
     """
     from .face_utils import cosine_similarity_numpy, preprocess_img, image_to_embedding
-    
-    infer = load_model()
-    detector = MTCNN()
+
+    infer = load_model() if infer is None else infer
+    detector = MTCNN() if detector is None else detector
     
     # Extract face embedding from uploaded image
     faces_in_upload = detector.detect_faces(uploaded_image)
