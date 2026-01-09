@@ -297,7 +297,7 @@ def search_all_faces_in_video(video_path, threshold=0.6, infer=None, detector=No
                     metadata = results['metadatas'][0][0]
                     person_name = metadata.get('name') or metadata.get('person_name')
                     threshold = metadata.get('threshold', threshold)
-                    person_id = metadata.get('id') or metadata.get('person_id')
+                    person_id = metadata.get('id') or metadata.get('person_id') or metadata.get('identity')
 
                 # Check if match threshold
                 if distance > threshold:

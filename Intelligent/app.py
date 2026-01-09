@@ -655,7 +655,7 @@ def search_person_in_video():
             detections = result.get('detections', []) or []
             for det in detections:
                 # Prefer explicit form-provided missing id / person name when available
-                missing_id = id_missing_document or det.get('missingDocumentId') or det.get('missing_document_id') or det.get('identity').get('person_id') or det.get('personId')
+                missing_id = id_missing_document or det.identity.get('person_id') or det.get('personId')
                 confident = det.get('confidence') or det.get('confident') or det.get('distance') or det.get('similarity')
                 detection_log = det.get('detection_log') or det.get('log') or ''
                 detect_picture = det.get('image') or det.get('detect_picture') or None
@@ -1046,8 +1046,8 @@ def add_person_to_chroma():
             return jsonify({'error': 'Request body is required'}), 400
         
         # Validate required fields
-        if 'person_id' not in data:
-            return jsonify({'error': 'person_id is required'}), 400
+        if 'doc_id' not in data:
+            return jsonify({'error': 'doc_id is required'}), 400
         
         if 'name' not in data:
             return jsonify({'error': 'name is required'}), 400
@@ -1055,7 +1055,7 @@ def add_person_to_chroma():
         if 'image_url' not in data:
             return jsonify({'error': 'image_url is required'}), 400
         
-        person_id = data['person_id']
+        doc_id = data['doc_id']
         name = data['name']
         image_url = data['image_url']
         
@@ -1078,8 +1078,14 @@ def add_person_to_chroma():
             else:
                 # Local file path (relative to backend uploads directory)
                 # Construct full path
-                backend_base_url = os.getenv('BACKEND_BASE_URL', 'http://localhost:8080')
-                full_url = f"{backend_base_url}{image_url}"
+                backend_base_url = os.getenv(
+                    "BACKEND_BASE_URL", 
+                    "http://backend-app:8080"
+                )
+                if image_url.startswith("/"):
+                    full_url = backend_base_url + image_url
+                else:
+                    full_url = image_url
                 
                 logging.info(f"Fetching image from backend: {full_url}")
                 response = requests.get(full_url, timeout=10)
@@ -1101,46 +1107,71 @@ def add_person_to_chroma():
         except Exception as e:
             return jsonify({'error': f'Error processing image: {str(e)}'}), 400
         
-        # Parse optional metadata
-        metadata = data.get('metadata', {})
-        if not isinstance(metadata, dict):
-            metadata = {}
-        
-        # Add name to metadata
-        metadata['name'] = name
-        
         # Add person to ChromaDB
-        logging.info(f"Adding person {name} (ID: {person_id}) to ChromaDB")
+        logging.info(f"Adding person to ChromaDB: {doc_id}")
         result = utils.add_person_to_chroma(
-            person_id=str(person_id),
-            face_image=uploaded_image,
-            metadata=metadata,
-            infer=INFER,
-            collection=COLLECTION,
-            detector=DETECTOR
-        )
+            person_id=doc_id, 
+            face_image=uploaded_image, 
+            infer=INFER, collection=COLLECTION, detector=DETECTOR)
         
         # Check for errors
-        if 'error' in result and result['error']:
-            if 'No face detected' in result['error']:
-                return jsonify({'error': result['error']}), 422
-            else:
-                return jsonify({'error': result['error']}), 500
+        if result.get("error"):
+            return jsonify({'error': result['error']}), 500
         
         # Return success response
         return jsonify({
             'success': True,
-            'person_id': person_id,
+            'doc_id': doc_id,
             'name': name,
             'message': f'Successfully added {name} to ChromaDB',
-            'embedding_dimension': result.get('embedding_dimension', 128)
+            'embedding_dimension': result.get('embedding_dimension', 128),
+            'metadata': result.get('metadata', {})
         }), 201
         
     except ValueError as e:
+        logging.exception(f"Add chroma failed: {str(e)}")
         return jsonify({'error': f'Invalid parameter value: {str(e)}'}), 400
     except Exception as e:
         logging.error(f"Error adding person to ChromaDB: {str(e)}")
         return jsonify({'error': 'Internal server error occurred'}), 500
+
+
+@app.route('/api/search-chroma', methods=['GET'])
+def lookChromaDB():
+    load_items = COLLECTION.get(include=['embeddings', 'metadatas', 'documents'])
+    embeddings = load_items.get('embeddings', [])
+    metadatas = load_items.get('metadatas', [])
+    documents = load_items.get('documents', []) 
+    print(f"Tổng số mục trong collection: {len(embeddings)}")
+    print("Dữ liệu trong ChromaDB với ngưỡng thích ứng:")
+    safe_embeddings = []
+    for emb in embeddings:
+        if isinstance(emb, np.ndarray):
+            safe_embeddings.append(emb.tolist())
+        else:
+            safe_embeddings.append(list(emb))
+    safe_metadatas = []
+    for meta in metadatas:
+        clean_meta = {}
+        for k, v in meta.items():
+            if isinstance(v, (np.float32, np.float64)):
+                clean_meta[k] = float(v)
+            elif isinstance(v, (np.int32, np.int64)):
+                clean_meta[k] = int(v)
+            else:
+                clean_meta[k] = v
+        safe_metadatas.append(clean_meta)
+    payload = {
+        'embeddings': safe_embeddings,
+        'metadatas': safe_metadatas,
+        'documents': documents
+    }
+    return {
+        'message': 'OK',
+        'payload': payload,
+        'total': len(safe_embeddings)
+    }
+
 
 
 

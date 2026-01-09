@@ -137,36 +137,37 @@ public class MissingDocumentController {
 
             MissingDocument savedDocument = missingDocumentService.save(request, areaOpt.get(), reporterOpt.get());
 
-            // // Convert to DTO to send to Flask Chroma service
-            // try {
-            //     MissingDocumentResponseDTO dto = missingDocumentService.convertToDTO(savedDocument);
+            // Convert to DTO to send to Flask Chroma service
+            try {
+                MissingDocumentResponseDTO dto = missingDocumentService.convertToDTO(savedDocument);
 
-            //     // Prepare image as base64
-            //     String imageBase64 = pictureService.convertImageToBase64String(savedDocument.getFacePictureUrl());
+                // Prepare image as base64
+                // String imageBase64 = pictureService.convertImageToBase64String(savedDocument.getFacePictureUrl());
 
-            //     // Build payload and POST to Flask Chroma endpoint (non-blocking best-effort)
-            //     try {
-            //         String flaskUrl = System.getenv().getOrDefault("CHROMA_FLASK_URL", "http://video-streaming-service:5001/api/add-chroma");
-            //         RestTemplate rest = new RestTemplate();
-            //         HttpHeaders headers = new HttpHeaders();
-            //         headers.setContentType(MediaType.APPLICATION_JSON);
-            //         ObjectMapper mapper = new ObjectMapper();
+                // Build payload and POST to Flask Chroma endpoint (non-blocking best-effort)
+                try {
+                    String flaskUrl = System.getenv().getOrDefault("CHROMA_FLASK_URL", "http://video-streaming-service:5001/api/add-chroma");
+                    RestTemplate rest = new RestTemplate();
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    ObjectMapper mapper = new ObjectMapper();
 
-            //         java.util.Map<String, Object> payload = new java.util.HashMap<>();
-            //         payload.put("missingDocumentDTO", dto);
-            //         payload.put("image", imageBase64);
+                    java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                    payload.put("name", dto.getName());
+                    payload.put("image_url", dto.getFacePictureUrl());
+                    payload.put("doc_id", dto.getId());
 
-            //         String body = mapper.writeValueAsString(payload);
-            //         HttpEntity<String> entity = new HttpEntity<>(body, headers);
+                    String body = mapper.writeValueAsString(payload);
+                    HttpEntity<String> entity = new HttpEntity<>(body, headers);
 
-            //         // fire-and-forget: we still call but do not fail the main request if this fails
-            //         rest.postForEntity(flaskUrl, entity, String.class);
-            //     } catch (Exception ex) {
-            //         System.err.println("Warning: failed to notify Flask Chroma service: " + ex.getMessage());
-            //     }
-            // } catch (Exception ex) {
-            //     System.err.println("Warning: failed to prepare/send data to Chroma: " + ex.getMessage());
-            // }
+                    // fire-and-forget: we still call but do not fail the main request if this fails
+                    rest.postForEntity(flaskUrl, entity, String.class);
+                } catch (Exception ex) {
+                    System.err.println("Warning: failed to notify Flask Chroma service: " + ex.getMessage());
+                }
+            } catch (Exception ex) {
+                System.err.println("Warning: failed to prepare/send data to Chroma: " + ex.getMessage());
+            }
 
             return ResponseEntity.status(201).body(savedDocument);
         } catch (Exception e) {

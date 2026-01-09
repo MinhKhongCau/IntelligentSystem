@@ -159,8 +159,10 @@ def load_model():
     return infer
 
 
-def load_chroma_database(collection_name="image_embeddings", DB_PATH='chromadb'):
+def load_chroma_database(collection_name=None, DB_PATH=None):
     """Load ChromaDB database"""
+    collection_name = collection_name or "image_embeddings"
+    DB_PATH = DB_PATH or "chromadb"
     try: 
         # Connect to ChromaDB saved 
         client = chromadb.PersistentClient(path=DB_PATH)

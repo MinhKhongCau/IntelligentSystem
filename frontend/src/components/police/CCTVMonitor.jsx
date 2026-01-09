@@ -20,7 +20,7 @@ const CCTVMonitor = () => {
   const [searchImage, setSearchImage] = useState(null);
   const [searchImagePreview, setSearchImagePreview] = useState(null);
   const [searchCameraIp, setSearchCameraIp] = useState('');
-  const [searchThreshold, setSearchThreshold] = useState(0.6);
+  // const [searchThreshold, setSearchThreshold] = useState(0.6);
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(location.state?.searchResults || null);
   
@@ -153,7 +153,7 @@ const CCTVMonitor = () => {
         formData.append('image', searchImage);
       }
       formData.append('camera_ip', searchCameraIp);
-      formData.append('threshold', searchThreshold);
+      // formData.append('threshold', searchThreshold);
       // If a missing person was selected, include their name and id so the
       // Flask server can report full information to the backend
       if (selectedMissingPerson) {
@@ -516,7 +516,7 @@ const CCTVMonitor = () => {
                 </select>
               )}
               
-              <div className="mt-3">
+              {/* <div className="mt-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Confidence Threshold: {(searchThreshold * 100).toFixed(0)}%
                 </label>
@@ -533,7 +533,7 @@ const CCTVMonitor = () => {
                   <span>Less Strict</span>
                   <span>More Strict</span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Search Actions */}
@@ -634,7 +634,7 @@ const CCTVMonitor = () => {
                               #{index + 1}
                             </div>
                             <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs font-semibold">
-                              {detection.confidence}% {detection.identity.person_name}
+                              {detection.confidence}% {detection.identity.person_name || detection.identity.person_id}
                             </div>
                             
                             {/* Hover overlay */}
