@@ -36,4 +36,4 @@ for i in range(len(embeddings)):
     document = documents[i]
     embedding = np.array(embeddings[i])
     threshold = metadata.get('threshold', 0.5)
-    print(f"ID: {metadata.get('id')}, Name: {metadata.get('name')}, Threshold: {threshold}, Document: {document}")
+    print(f"ID: {metadata.get('id')}, Name: {metadata.get('name')}, Threshold: {threshold}, Document: {document} Length embedding: {len(embedding)}")
